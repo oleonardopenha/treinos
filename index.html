@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f5f4f0">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon.png">
+<title>Treinos — Leonardo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--surface2:#eceae3;--border:#d3d1c7;--border2:#b4b2a9;
+  --txt:#1a1a18;--txt2:#5f5e5a;--txt3:#888780;--txt4:#b4b2a9;
+  --green:#1D9E75;--green-bg:#e5f3dd;--green-txt:#1a5c2e;
+  --red:#BE1E2D;--red-bg:#fde8e8;--red-txt:#a32d2d;
+  --blue:#378ADD;--blue-bg:#daeaf8;--blue-txt:#185fa5;
+  --navy:#1a3a5c;--amber:#BA7517;--amber-bg:#faeeda;--amber-txt:#854f0b;
+  --purple:#534AB7;
+  --radius:12px;--radius-sm:8px;--radius-xs:6px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+body{overflow-x:hidden;}
+
+/* NAV BAR BOTTOM */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:0.5px solid var(--border);display:flex;z-index:100;padding-bottom:var(--safe-bottom);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;cursor:pointer;border:none;background:transparent;color:var(--txt3);font-size:10px;gap:3px;transition:color .15s;}
+.nav-btn.active{color:var(--navy);}
+.nav-btn svg{width:22px;height:22px;stroke-width:1.8;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;}
+
+/* MAIN CONTENT */
+.page{display:none;padding:16px 14px;padding-bottom:calc(72px + var(--safe-bottom));min-height:100vh;}
+.page.active{display:block;}
+
+/* HEADER */
+.page-title{font-size:17px;font-weight:500;margin-bottom:14px;color:var(--txt);}
+
+/* CARDS */
+.cards-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.cards-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.card{background:var(--surface2);border-radius:var(--radius-sm);padding:11px 12px;}
+.card-label{font-size:10px;color:var(--txt3);margin-bottom:3px;}
+.card-value{font-size:19px;font-weight:500;color:var(--txt);line-height:1.1;}
+.card-sub{font-size:10px;color:var(--txt4);margin-top:2px;}
+.card.full{grid-column:span 2;}
+.card.accent{background:var(--navy);}
+.card.accent .card-label{color:#85b7eb;}
+.card.accent .card-value{color:#fff;}
+.card.accent .card-sub{color:#85b7eb;}
+
+/* CHART BOX */
+.chart-box{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;}
+.chart-title{font-size:12px;font-weight:500;color:var(--txt);margin-bottom:10px;}
+.chart-wrap{position:relative;width:100%;}
+
+/* LEGEND PILLS */
+.legend-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.leg-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 9px;border-radius:999px;border:1px solid transparent;cursor:pointer;transition:opacity .15s;}
+.leg-btn.inactive{opacity:0.35;}
+
+/* FILTER ROW */
+.filter-row{display:flex;gap:6px;align-items:center;margin-bottom:10px;}
+.filter-row .chart-title{margin-bottom:0;flex:1;}
+.filter-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid transparent;cursor:pointer;transition:opacity .15s;}
+.filter-btn.inactive{opacity:0.35;}
+
+/* SLIDER */
+.slider-box{padding-top:10px;border-top:0.5px solid var(--border);margin-top:10px;}
+.slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.slider-label{font-size:11px;color:var(--txt3);}
+.slider-range{font-size:11px;font-weight:500;color:var(--txt);}
+.slider-reset{font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid var(--border2);background:transparent;color:var(--txt3);cursor:pointer;}
+.slider-track-wrap{position:relative;height:28px;user-select:none;}
+.slider-track{position:absolute;top:12px;left:0;right:0;height:4px;background:var(--surface2);border-radius:2px;}
+.slider-fill{position:absolute;top:12px;height:4px;background:var(--purple);border-radius:2px;}
+.slider-thumb{position:absolute;top:4px;width:20px;height:20px;background:var(--purple);border-radius:50%;cursor:grab;transform:translateX(-50%);box-shadow:0 1px 4px rgba(0,0,0,.2);}
+
+/* FORM */
+.section-lbl{font-size:11px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
+.form-box{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.field label{font-size:12px;color:var(--txt2);}
+.field input,.field select{font-size:15px;padding:11px 12px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);background:var(--surface2);color:var(--txt);-webkit-appearance:none;width:100%;}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue);background:var(--surface);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.btn-primary{width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:var(--navy);color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-bottom:8px;}
+.btn-ghost{width:100%;padding:13px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);background:transparent;color:var(--txt2);font-size:15px;cursor:pointer;}
+.btn-success{width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:var(--green);color:#fff;font-size:15px;font-weight:500;cursor:pointer;margin-bottom:8px;}
+.btn-danger{padding:10px 16px;border-radius:var(--radius-sm);border:none;background:var(--red-bg);color:var(--red-txt);font-size:13px;cursor:pointer;}
+.msg{font-size:13px;padding:10px;border-radius:var(--radius-sm);margin-top:8px;display:none;text-align:center;}
+.msg.ok{background:var(--green-bg);color:var(--green-txt);}
+.msg.err{background:var(--red-bg);color:var(--red-txt);}
+
+/* TIROS */
+.tiros-section{display:none;border-top:0.5px solid var(--border);padding-top:12px;margin-top:4px;}
+.tiros-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.tiro-field{display:flex;flex-direction:column;gap:4px;}
+.tiro-field label{font-size:11px;color:var(--txt3);}
+.tiro-field input{width:72px;font-size:14px;padding:9px;border-radius:var(--radius-xs);border:0.5px solid var(--border2);background:var(--surface2);color:var(--txt);}
+
+/* HISTÓRICO */
+.hist-item{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;}
+.hist-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.hist-date{font-size:12px;color:var(--txt3);}
+.hist-del{font-size:11px;padding:3px 9px;border-radius:5px;border:none;background:var(--red-bg);color:var(--red-txt);cursor:pointer;}
+.hist-main{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;}
+.hist-value{font-size:16px;font-weight:500;color:var(--txt);}
+.hist-unit{font-size:12px;color:var(--txt3);}
+.hist-meta{display:flex;flex-wrap:wrap;gap:6px;}
+.hist-tag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--txt3);}
+.pill{display:inline-block;font-size:10px;padding:2px 8px;border-radius:999px;font-weight:500;}
+.p-reg{background:var(--green-bg);color:var(--green-txt);}
+.p-int{background:var(--red-bg);color:var(--red-txt);}
+.p-lon{background:var(--blue-bg);color:var(--blue-txt);}
+.empty{text-align:center;padding:3rem 1rem;color:var(--txt4);font-size:14px;}
+
+/* PESO HIST */
+.peso-item{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.peso-left .peso-date{font-size:11px;color:var(--txt3);}
+.peso-left .peso-val{font-size:18px;font-weight:500;color:var(--txt);}
+.peso-badge{font-size:12px;padding:3px 10px;border-radius:999px;font-weight:500;}
+.pb-down{background:var(--green-bg);color:var(--green-txt);}
+.pb-up{background:var(--red-bg);color:var(--red-txt);}
+.pb-same{background:var(--surface2);color:var(--txt3);}
+
+/* UPLOAD */
+.upload-area{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;margin-bottom:10px;background:var(--surface);}
+.upload-icon{font-size:28px;color:var(--txt4);margin-bottom:6px;}
+.upload-area p{font-size:13px;color:var(--txt3);}
+.upload-area small{font-size:11px;color:var(--txt4);display:block;margin-top:3px;}
+
+/* DIVIDER */
+.divider{border:none;border-top:0.5px solid var(--border);margin:14px 0;}
+
+/* EXPORT BTNS */
+.export-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.btn-export{padding:13px;border-radius:var(--radius-sm);border:0.5px solid var(--green);background:var(--green-bg);color:var(--green-txt);font-size:13px;font-weight:500;cursor:pointer;text-align:center;}
+</style>
+</head>
+<body>
+
+<!-- PÁGINA: VISÃO GERAL -->
+<div class="page active" id="page-visao">
+  <div class="page-title">Treinos — Leonardo 🏃‍♂️</div>
+
+  <div class="cards-2">
+    <div class="card accent full"><div class="card-label">semana atual (seg–dom)</div><div class="card-value" id="s-week">— km</div><div class="card-sub" id="s-week-sub">0 treinos</div></div>
+  </div>
+  <div class="cards-3">
+    <div class="card"><div class="card-label">último longo</div><div class="card-value" id="s-pace">—</div><div class="card-sub" id="s-pace-sub">—</div></div>
+    <div class="card"><div class="card-label">regenerativa</div><div class="card-value" id="s-fc">—</div><div class="card-sub" id="s-fc-sub">—</div></div>
+    <div class="card"><div class="card-label">intervalada FC máx</div><div class="card-value" id="s-int">—</div><div class="card-sub" id="s-int-sub">—</div></div>
+  </div>
+  <div class="cards-2">
+    <div class="card full"><div class="card-label">peso atual</div><div class="card-value" id="s-peso">—</div><div class="card-sub" id="s-peso-sub">meta: 91 kg</div></div>
+  </div>
+
+  <div class="chart-box">
+    <div class="legend-row">
+      <button class="leg-btn active" id="leg-reg" onclick="toggleLegend('reg')" style="background:rgba(29,158,117,.12);border-color:#1D9E75;color:#1D9E75;"><span style="width:8px;height:8px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>reg</button>
+      <button class="leg-btn active" id="leg-int" onclick="toggleLegend('int')" style="background:rgba(190,30,45,.1);border-color:#BE1E2D;color:#BE1E2D;"><span style="width:8px;height:8px;border-radius:2px;background:#BE1E2D;display:inline-block;"></span>int</button>
+      <button class="leg-btn active" id="leg-lon" onclick="toggleLegend('lon')" style="background:rgba(55,138,221,.12);border-color:#378ADD;color:#378ADD;"><span style="width:8px;height:8px;border-radius:2px;background:#378ADD;display:inline-block;"></span>longo</button>
+      <button class="leg-btn inactive" id="leg-dist" onclick="toggleLegend('dist')" style="background:rgba(83,74,183,.08);border-color:#534AB7;color:#534AB7;"><span style="width:10px;height:3px;border-radius:2px;background:#534AB7;display:inline-block;"></span>dist</button>
+    </div>
+    <div class="chart-title">FC por treino</div>
+    <div class="chart-wrap" style="height:180px;"><canvas id="cFC"></canvas></div>
+    <div class="slider-box">
+      <div class="slider-header">
+        <span class="slider-label">período</span>
+        <span class="slider-range" id="range-label">todos</span>
+        <button class="slider-reset" onclick="resetRange()">resetar</button>
+      </div>
+      <div class="slider-track-wrap" id="range-container">
+        <div class="slider-track"></div>
+        <div class="slider-fill" id="track-fill"></div>
+        <div class="slider-thumb" id="thumb-left"></div>
+        <div class="slider-thumb" id="thumb-right"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">volume semanal (km)</div>
+    <div class="chart-wrap" style="height:160px;"><canvas id="cVol"></canvas></div>
+    <div class="slider-box">
+      <div class="slider-header">
+        <span class="slider-label">período</span>
+        <span class="slider-range" id="vol-range-label">todos</span>
+        <button class="slider-reset" onclick="resetRangeChart('vol')">resetar</button>
+      </div>
+      <div class="slider-track-wrap" id="vol-range-container">
+        <div class="slider-track"></div>
+        <div class="slider-fill" id="vol-track-fill"></div>
+        <div class="slider-thumb" id="vol-thumb-left"></div>
+        <div class="slider-thumb" id="vol-thumb-right"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="filter-row">
+      <div class="chart-title">pace por treino</div>
+      <button class="filter-btn active" id="fp-reg" onclick="togglePaceFilter('reg')" style="background:rgba(29,158,117,.12);border-color:#1D9E75;color:#1D9E75;">reg</button>
+      <button class="filter-btn active" id="fp-lon" onclick="togglePaceFilter('lon')" style="background:rgba(55,138,221,.12);border-color:#378ADD;color:#378ADD;">longo</button>
+    </div>
+    <div class="chart-wrap" style="height:160px;"><canvas id="cPace"></canvas></div>
+    <div class="slider-box">
+      <div class="slider-header">
+        <span class="slider-label">período</span>
+        <span class="slider-range" id="pace-range-label">todos</span>
+        <button class="slider-reset" onclick="resetRangeChart('pace')">resetar</button>
+      </div>
+      <div class="slider-track-wrap" id="pace-range-container">
+        <div class="slider-track"></div>
+        <div class="slider-fill" id="pace-track-fill"></div>
+        <div class="slider-thumb" id="pace-thumb-left"></div>
+        <div class="slider-thumb" id="pace-thumb-right"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">evolução do peso — meta 91kg</div>
+    <div class="chart-wrap" style="height:150px;"><canvas id="cPeso"></canvas></div>
+    <div class="slider-box">
+      <div class="slider-header">
+        <span class="slider-label">período</span>
+        <span class="slider-range" id="peso-range-label">todos</span>
+        <button class="slider-reset" onclick="resetRangeChart('peso')">resetar</button>
+      </div>
+      <div class="slider-track-wrap" id="peso-range-container">
+        <div class="slider-track"></div>
+        <div class="slider-fill" id="peso-track-fill"></div>
+        <div class="slider-thumb" id="peso-thumb-left"></div>
+        <div class="slider-thumb" id="peso-thumb-right"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PÁGINA: + TREINO -->
+<div class="page" id="page-add">
+  <div class="page-title">registrar treino</div>
+  <div class="form-box">
+    <div class="grid-2"><div class="field"><label>data</label><input type="date" id="f-data"></div><div class="field"><label>tipo</label><select id="f-tipo" onchange="toggleTirosForm()"><option value="regenerativo">regenerativo</option><option value="intervalada">intervalada</option><option value="longo">longo</option></select></div></div>
+    <div class="grid-2"><div class="field"><label>distância (km)</label><input type="number" id="f-dist" placeholder="8.0" step="0.1" inputmode="decimal"></div><div class="field"><label>tempo (min)</label><input type="number" id="f-tempo" placeholder="51.8" step="0.1" inputmode="decimal"></div></div>
+    <div class="grid-2"><div class="field"><label>FC média (bpm)</label><input type="number" id="f-fcm" placeholder="155" inputmode="numeric"></div><div class="field"><label>FC máxima (bpm)</label><input type="number" id="f-fcx" placeholder="175" inputmode="numeric"></div></div>
+    <div class="grid-3"><div class="field"><label>vel (km/h)</label><input type="number" id="f-vel" placeholder="9.5" step="0.1" inputmode="decimal"></div><div class="field"><label>semana #</label><input type="number" id="f-sem" placeholder="1" inputmode="numeric"></div><div class="field"><label>sensação</label><input type="number" id="f-sens" placeholder="8" min="1" max="10" inputmode="numeric"></div></div>
+    <div class="field"><label>observações</label><input type="text" id="f-obs" placeholder="ex: calor forte, lombar ok..."></div>
+
+    <div class="tiros-section" id="tiros-section">
+      <div class="section-lbl" style="margin-top:4px;">detalhes dos tiros</div>
+      <div class="grid-2"><div class="field"><label>qtd de tiros</label><input type="number" id="f-ntiros" placeholder="4" inputmode="numeric" onchange="renderTirosInput()"></div><div class="field"><label>vel tiro (km/h)</label><input type="number" id="f-tvel" placeholder="12.0" step="0.5" inputmode="decimal"></div></div>
+      <div class="grid-2"><div class="field"><label>duração cada (s)</label><input type="number" id="f-tdur" placeholder="120" inputmode="numeric"></div><div class="field"><label>descanso (s)</label><input type="number" id="f-tdesc" placeholder="90" inputmode="numeric"></div></div>
+      <div id="tiros-fc-inputs" class="tiros-grid"></div>
+    </div>
+
+    <button class="btn-primary" onclick="salvarTreino()">salvar treino</button>
+    <button class="btn-ghost" onclick="limparForm()">limpar</button>
+    <div class="msg" id="msg-add"></div>
+  </div>
+</div>
+
+<!-- PÁGINA: + PESO -->
+<div class="page" id="page-peso">
+  <div class="page-title">registrar peso</div>
+  <div class="form-box">
+    <div class="grid-2"><div class="field"><label>data</label><input type="date" id="p-data"></div><div class="field"><label>peso (kg)</label><input type="number" id="p-val" placeholder="93.5" step="0.1" inputmode="decimal"></div></div>
+    <div class="field"><label>observação</label><input type="text" id="p-obs" placeholder="ex: manhã em jejum..."></div>
+    <button class="btn-success" onclick="salvarPeso()">salvar peso</button>
+    <div class="msg" id="msg-peso"></div>
+  </div>
+
+  <div class="section-lbl">histórico de peso</div>
+  <div id="peso-hist"><div class="empty">nenhum peso registrado</div></div>
+</div>
+
+<!-- PÁGINA: HISTÓRICO -->
+<div class="page" id="page-hist">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div class="page-title" style="margin-bottom:0;">histórico</div>
+    <button class="btn-danger" onclick="if(confirm('Apagar todos os treinos?')){treinos=[];save();renderAll();}">apagar tudo</button>
+  </div>
+  <div id="hist-content"><div class="empty">nenhum treino ainda</div></div>
+</div>
+
+<!-- PÁGINA: IMPORTAR -->
+<div class="page" id="page-imp">
+  <div class="page-title">importar / exportar</div>
+  <div class="form-box">
+    <div class="section-lbl">importar planilha</div>
+    <div class="upload-area" onclick="document.getElementById('file-input').click()">
+      <div class="upload-icon">↑</div>
+      <p>toque para selecionar o arquivo</p>
+      <small>treinos_leonardo.xlsx — importa abas treinos e pesos</small>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importarArquivo(this)">
+    <div class="msg" id="msg-import"></div>
+    <hr class="divider">
+    <div class="section-lbl">exportar</div>
+    <div class="export-row">
+      <button class="btn-export" onclick="exportarCSV('treinos')">treinos CSV</button>
+      <button class="btn-export" onclick="exportarCSV('pesos')">pesos CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV BAR -->
+<nav class="nav">
+  <button class="nav-btn active" id="nav-visao" onclick="showPage('visao')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    visão geral
+  </button>
+  <button class="nav-btn" id="nav-add" onclick="showPage('add')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    treino
+  </button>
+  <button class="nav-btn" id="nav-peso" onclick="showPage('peso')">
+    <svg viewBox="0 0 24 24"><path d="M6 20h12l-1.5-9h-9L6 20z"/><path d="M9 11V8a3 3 0 016 0v3"/></svg>
+    peso
+  </button>
+  <button class="nav-btn" id="nav-hist" onclick="showPage('hist')">
+    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>
+    histórico
+  </button>
+  <button class="nav-btn" id="nav-imp" onclick="showPage('imp')">
+    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    dados
+  </button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+function toISO(val){
+  if(val===null||val===undefined||val==='')return null;
+  const s=val.toString().trim();
+  if(/^\d{5,6}$/.test(s)){const n=parseInt(s);const d=new Date(Math.round((n-25569)*86400*1000));return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');}
+  if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)){const p=s.split('/');return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');}
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10);
+  if(s.length>10&&s.includes('T'))return s.slice(0,10);
+  return null;
+}
+
+function fmtData(iso){
+  if(!iso)return'—';
+  const p=iso.slice(0,10).split('-');
+  if(p.length!==3||isNaN(parseInt(p[1])))return iso;
+  const yy=p[0].slice(2);
+  return p[2]+'/'+String(parseInt(p[1])).padStart(2,'0')+'/'+yy;
+}
+
+const TK='leonardo_treinos_v1',PK='leonardo_pesos_v1';
+let treinos=[],pesos=[];
+let cFC,cVol,cPace,cPeso;
+const legState={reg:true,int:true,lon:true,dist:false};
+const paceFilter={reg:true,lon:true};
+let rangeStart=null,rangeEnd=null;
+const chartRanges={vol:{start:null,end:null},pace:{start:null,end:null},peso:{start:null,end:null}};
+const COR={reg:'#1D9E75',int:'#BE1E2D',lon:'#378ADD'};
+
+function save(){try{localStorage.setItem(TK,JSON.stringify(treinos));}catch(e){}}
+function savePeso(){try{localStorage.setItem(PK,JSON.stringify(pesos));}catch(e){}}
+function loadAll(){
+  try{const r=localStorage.getItem(TK);if(r)treinos=JSON.parse(r);}catch(e){treinos=[];}
+  try{const r=localStorage.getItem(PK);if(r)pesos=JSON.parse(r);}catch(e){pesos=[];}
+}
+
+function showPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  if(p==='visao'){renderCharts();initSlider();}
+  if(p==='hist')renderHist();
+  if(p==='peso')renderPesoHist();
+  window.scrollTo(0,0);
+}
+
+function pd(d,t){if(!d||!t||d==0)return null;return t/d;}
+function ps(dec){if(!dec)return'—';const m=Math.floor(dec),s=Math.round((dec-m)*60);return m+':'+String(s).padStart(2,'0');}
+function tc(tipo){return COR[tipo==='regenerativo'?'reg':tipo==='intervalada'?'int':'lon']||'#888';}
+function showMsg(id,txt,err=false){const el=document.getElementById(id);el.textContent=txt;el.className='msg '+(err?'err':'ok');el.style.display='block';setTimeout(()=>el.style.display='none',4000);}
+
+function toggleLegend(key){
+  legState[key]=!legState[key];
+  document.getElementById('leg-'+key).classList.toggle('inactive',!legState[key]);
+  rebuildFCChart();
+}
+function togglePaceFilter(key){
+  paceFilter[key]=!paceFilter[key];
+  document.getElementById('fp-'+key).classList.toggle('inactive',!paceFilter[key]);
+  rebuildPaceChart();
+}
+
+function getFCVal(t){
+  const key=t.tipo==='regenerativo'?'reg':t.tipo==='intervalada'?'int':'lon';
+  if(!legState[key])return null;
+  if(t.tipo==='regenerativo'||t.tipo==='longo')return t.fcMed||null;
+  if(t.tiros&&t.tiros.fcPicos&&t.tiros.fcPicos.length)return Math.max(...t.tiros.fcPicos);
+  return t.fcMax||null;
+}
+
+function getFilteredTreinos(){
+  if(!rangeStart&&!rangeEnd)return treinos;
+  return treinos.filter(t=>(!rangeStart||t.data>=rangeStart)&&(!rangeEnd||t.data<=rangeEnd));
+}
+
+function rebuildFCChart(){
+  const s=[...getFilteredTreinos()].sort((a,b)=>a.data.localeCompare(b.data));
+  const fcF=s.filter(t=>t.dist);
+  if(cFC)cFC.destroy();
+  const labels=fcF.map(t=>fmtData(t.data));
+  const fcData=fcF.map(t=>getFCVal(t));
+  const bgColors=fcF.map(t=>{const key=t.tipo==='regenerativo'?'reg':t.tipo==='intervalada'?'int':'lon';return legState[key]?tc(t.tipo):tc(t.tipo)+'33';});
+  const distData=fcF.map(t=>{const key=t.tipo==='regenerativo'?'reg':t.tipo==='intervalada'?'int':'lon';return legState[key]?(t.dist||null):null;});
+  cFC=new Chart(document.getElementById('cFC'),{
+    data:{labels:labels.length?labels:['sem dados'],datasets:[
+      {type:'bar',label:'FC',data:fcData.length?fcData:[0],backgroundColor:bgColors,borderRadius:3,yAxisID:'yFC',order:2},
+      {type:'line',label:'dist',data:distData.length?distData:[0],borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,.06)',pointBackgroundColor:'#534AB7',pointRadius:3,tension:0.3,fill:false,yAxisID:'yDist',order:1,hidden:!legState.dist,spanGaps:true}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false}},
+      scales:{yFC:{position:'left',min:100,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},callback:v=>v+'bpm'}},
+        yDist:{position:'right',min:0,max:15,grid:{display:false},ticks:{font:{size:10},callback:v=>v+'km'},display:legState.dist,title:{display:legState.dist,text:'distância',color:'#534AB7',font:{size:10}}},
+        x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}}}}
+  });
+}
+
+function rebuildPaceChart(){
+  const s=[...treinos].sort((a,b)=>a.data.localeCompare(b.data));
+  const pF=s.filter(t=>{if(!t.dist||!t.tempo)return false;if(t.tipo==='regenerativo'&&paceFilter.reg)return true;if(t.tipo==='longo'&&paceFilter.lon)return true;return false;});
+  if(cPace)cPace.destroy();
+  cPace=new Chart(document.getElementById('cPace'),{type:'line',data:{labels:pF.length?pF.map(t=>fmtData(t.data)):['sem dados'],datasets:[{data:pF.length?pF.map(t=>+pd(t.dist,t.tempo).toFixed(2)):[0],borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,.08)',pointBackgroundColor:pF.length?pF.map(t=>tc(t.tipo)):['#ccc'],pointRadius:4,tension:0.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{reverse:true,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},callback:v=>ps(v)+'/km'}},x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}}}}});
+}
+
+function renderSummary(){
+  const hoje=new Date(),ini=new Date(hoje);
+  const dow=hoje.getDay();ini.setDate(hoje.getDate()-(dow===0?6:dow-1));
+  const semStr=ini.toISOString().slice(0,10);
+  const sem=treinos.filter(t=>t.data>=semStr);
+  const vol=sem.reduce((a,t)=>a+(t.dist||0),0);
+  document.getElementById('s-week').textContent=vol.toFixed(1)+' km';
+  document.getElementById('s-week-sub').textContent=sem.length+' treino'+(sem.length!==1?'s':'');
+  const longs=treinos.filter(t=>t.tipo==='longo'&&t.dist&&t.tempo);
+  const ll=longs.length?longs[longs.length-1]:null;
+  document.getElementById('s-pace').textContent=ll?ps(pd(ll.dist,ll.tempo))+'/km':'—';
+  document.getElementById('s-pace-sub').textContent=ll?(ll.dist.toFixed(1)+'km — '+fmtData(ll.data)):'—';
+  const regs=treinos.filter(t=>t.tipo==='regenerativo'&&t.fcMed);
+  const lr=regs.length?regs[regs.length-1]:null;
+  document.getElementById('s-fc').textContent=lr?Math.round(lr.fcMed)+' bpm':'—';
+  document.getElementById('s-fc-sub').textContent=lr?((lr.dist?lr.dist.toFixed(1)+'km — ':'')+fmtData(lr.data)):'—';
+  const ints=treinos.filter(t=>t.tipo==='intervalada');
+  const li=ints.length?ints[ints.length-1]:null;
+  let fcMaxInt='—';
+  if(li){if(li.tiros&&li.tiros.fcPicos&&li.tiros.fcPicos.length)fcMaxInt=Math.max(...li.tiros.fcPicos)+' bpm';else if(li.fcMax)fcMaxInt=li.fcMax+' bpm';}
+  document.getElementById('s-int').textContent=fcMaxInt;
+  document.getElementById('s-int-sub').textContent=li?((li.dist?li.dist.toFixed(1)+'km — ':'')+fmtData(li.data)):'—';
+  if(pesos.length){
+    const ul=pesos[pesos.length-1],pn=pesos.length>1?pesos[pesos.length-2]:null;
+    document.getElementById('s-peso').textContent=ul.peso.toFixed(1)+' kg';
+    let sub='meta: 91 kg';
+    if(pn){const d=+(ul.peso-pn.peso).toFixed(1);sub=(d<0?'↓ '+Math.abs(d)+'kg':d>0?'↑ +'+d+'kg':'= igual')+' vs ant.';}
+    document.getElementById('s-peso-sub').textContent=sub;
+  }
+}
+
+function renderCharts(){
+  renderSummary();
+  rebuildFCChart();
+rebuildVolChart();
+  rebuildPaceChart();
+  rebuildPesoChart();
+}
+
+// SLIDER
+function initSlider(){
+  const sorted=[...treinos].sort((a,b)=>a.data.localeCompare(b.data));
+  if(sorted.length<2){document.getElementById('range-container').style.opacity='.3';return;}
+  document.getElementById('range-container').style.opacity='1';
+  rangeStart=null;rangeEnd=null;
+  updateSliderPos(0,1);
+  document.getElementById('range-label').textContent='todos';
+}
+function updateSliderPos(l,r){
+  const tl=document.getElementById('thumb-left'),tr=document.getElementById('thumb-right'),fill=document.getElementById('track-fill');
+  if(!tl)return;
+  tl.style.left=(l*100)+'%';tr.style.left=(r*100)+'%';
+  fill.style.left=(l*100)+'%';fill.style.width=((r-l)*100)+'%';
+}
+function resetRange(){
+  rangeStart=null;rangeEnd=null;updateSliderPos(0,1);
+  document.getElementById('range-label').textContent='todos';
+  rebuildFCChart();
+}
+function pctOfDate(date){
+  const s=[...treinos].sort((a,b)=>a.data.localeCompare(b.data));
+  if(s.length<2)return 0;
+  const idx=s.findIndex(t=>t.data===date);
+  return idx<0?0:idx/(s.length-1);
+}
+function dateAtPct(pct){
+  const s=[...treinos].sort((a,b)=>a.data.localeCompare(b.data));
+  if(s.length<2)return null;
+  return s[Math.max(0,Math.min(s.length-1,Math.round(pct*(s.length-1))))].data;
+}
+// ---- GENERIC SLIDER ----
+function initChartSlider(key, getItems){
+  const items=[...getItems()].filter(x=>x).sort();
+  const container=document.getElementById(key+'-range-container');
+  if(!container)return;
+  if(items.length<2){container.style.opacity='.3';return;}
+  container.style.opacity='1';
+  chartRanges[key].start=null;chartRanges[key].end=null;
+  updateSliderPosEl(key,0,1);
+  document.getElementById(key+'-range-label').textContent='todos';
+}
+
+function updateSliderPosEl(key,l,r){
+  const fill=document.getElementById(key+'-track-fill');
+  const tl=document.getElementById(key+'-thumb-left');
+  const tr=document.getElementById(key+'-thumb-right');
+  if(!fill||!tl||!tr)return;
+  tl.style.left=(l*100)+'%';tr.style.left=(r*100)+'%';
+  fill.style.left=(l*100)+'%';fill.style.width=((r-l)*100)+'%';
+}
+
+function setupChartSlider(key, getItems, onUpdate){
+  const container=document.getElementById(key+'-range-container');
+  const tl=document.getElementById(key+'-thumb-left');
+  const tr=document.getElementById(key+'-thumb-right');
+  if(!container||!tl||!tr)return;
+  let dragging=null;
+  function getPct(e){const rect=container.getBoundingClientRect();const x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;return Math.max(0,Math.min(1,x/rect.width));}
+  function itemAtPct(pct){const items=[...getItems()].filter(x=>x).sort();if(items.length<2)return null;return items[Math.max(0,Math.min(items.length-1,Math.round(pct*(items.length-1))))];}
+  function pctOfItem(item){const items=[...getItems()].filter(x=>x).sort();if(items.length<2)return 0;const idx=items.indexOf(item);return idx<0?0:idx/(items.length-1);}
+  function onMove(e){
+    if(!dragging)return;e.preventDefault();
+    const pct=getPct(e);
+    const items=[...getItems()].filter(x=>x).sort();
+    if(items.length<2)return;
+    let lp=chartRanges[key].start?pctOfItem(chartRanges[key].start):0;
+    let rp=chartRanges[key].end?pctOfItem(chartRanges[key].end):1;
+    if(dragging==='left'){lp=Math.min(pct,rp-1/(items.length-1));chartRanges[key].start=itemAtPct(lp);}
+    else{rp=Math.max(pct,lp+1/(items.length-1));chartRanges[key].end=itemAtPct(rp);}
+    updateSliderPosEl(key,lp,rp);
+    const s=chartRanges[key].start,en=chartRanges[key].end;
+    document.getElementById(key+'-range-label').textContent=fmtData(s)+' → '+fmtData(en);
+    onUpdate();
+  }
+  function onUp(){dragging=null;}
+  tl.addEventListener('mousedown',e=>{dragging='left';e.preventDefault();});
+  tr.addEventListener('mousedown',e=>{dragging='right';e.preventDefault();});
+  tl.addEventListener('touchstart',e=>{dragging='left';},{passive:false});
+  tr.addEventListener('touchstart',e=>{dragging='right';},{passive:false});
+  document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+  document.addEventListener('touchmove',onMove,{passive:false});document.addEventListener('touchend',onUp);
+}
+
+function resetRangeChart(key){
+  chartRanges[key].start=null;chartRanges[key].end=null;
+  updateSliderPosEl(key,0,1);
+  document.getElementById(key+'-range-label').textContent='todos';
+  if(key==='vol')rebuildVolChart();
+  if(key==='pace')rebuildPaceChart();
+  if(key==='peso')rebuildPesoChart();
+}
+
+function getVolDates(){return treinos.map(t=>t.data);}
+function getPaceDates(){return treinos.filter(t=>(t.tipo==='regenerativo'&&paceFilter.reg)||(t.tipo==='longo'&&paceFilter.lon)).filter(t=>t.dist&&t.tempo).map(t=>t.data);}
+function getPesoDates(){return pesos.map(p=>p.data);}
+
+function setupSlider(){
+  const container=document.getElementById('range-container');
+  const tl=document.getElementById('thumb-left'),tr=document.getElementById('thumb-right');
+  if(!container)return;
+  let dragging=null;
+  function getPct(e){const rect=container.getBoundingClientRect();const x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;return Math.max(0,Math.min(1,x/rect.width));}
+  function onMove(e){
+    if(!dragging)return;e.preventDefault();
+    const pct=getPct(e);
+    const s=[...treinos].sort((a,b)=>a.data.localeCompare(b.data));
+    if(s.length<2)return;
+    let lp=rangeStart?pctOfDate(rangeStart):0,rp=rangeEnd?pctOfDate(rangeEnd):1;
+    if(dragging==='left'){lp=Math.min(pct,rp-1/(s.length-1));rangeStart=dateAtPct(lp);}
+    else{rp=Math.max(pct,lp+1/(s.length-1));rangeEnd=dateAtPct(rp);}
+    updateSliderPos(lp,rp);
+    document.getElementById('range-label').textContent=fmtData(rangeStart)+' → '+fmtData(rangeEnd);
+    rebuildFCChart();
+  }
+  function onUp(){dragging=null;}
+  tl.addEventListener('mousedown',e=>{dragging='left';e.preventDefault();});
+  tr.addEventListener('mousedown',e=>{dragging='right';e.preventDefault();});
+  tl.addEventListener('touchstart',e=>{dragging='left';},{passive:false});
+  tr.addEventListener('touchstart',e=>{dragging='right';},{passive:false});
+  document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
+  document.addEventListener('touchmove',onMove,{passive:false});document.addEventListener('touchend',onUp);
+}
+
+// FORMULÁRIO TREINO
+function toggleTirosForm(){document.getElementById('tiros-section').style.display=document.getElementById('f-tipo').value==='intervalada'?'block':'none';}
+function renderTirosInput(){
+  const n=parseInt(document.getElementById('f-ntiros').value)||0;
+  const cont=document.getElementById('tiros-fc-inputs');
+  cont.innerHTML='';
+  for(let i=1;i<=n;i++){
+    const d=document.createElement('div');d.className='tiro-field';
+    d.innerHTML=`<label>tiro ${i}</label><input type="number" id="fc-tiro-${i}" placeholder="175" inputmode="numeric">`;
+    cont.appendChild(d);
+  }
+}
+function salvarTreino(){
+  const data=document.getElementById('f-data').value,tipo=document.getElementById('f-tipo').value,dist=parseFloat(document.getElementById('f-dist').value);
+  if(!data||!tipo||isNaN(dist)){showMsg('msg-add','preencha ao menos data, tipo e distância.',true);return;}
+  let tiros=null;
+  if(tipo==='intervalada'){
+    const n=parseInt(document.getElementById('f-ntiros').value)||0,dur=parseInt(document.getElementById('f-tdur').value)||null,vel=parseFloat(document.getElementById('f-tvel').value)||null,desc=parseInt(document.getElementById('f-tdesc').value)||null,fcPicos=[];
+    for(let i=1;i<=n;i++){const v=parseInt(document.getElementById('fc-tiro-'+i)?.value);if(v)fcPicos.push(v);}
+    if(n>0)tiros={n,duracao:dur,vel,descanso:desc,fcPicos};
+  }
+  treinos.push({data,tipo,dist,tempo:parseFloat(document.getElementById('f-tempo').value)||null,fcMed:parseInt(document.getElementById('f-fcm').value)||null,fcMax:parseInt(document.getElementById('f-fcx').value)||null,vel:parseFloat(document.getElementById('f-vel').value)||null,semana:parseInt(document.getElementById('f-sem').value)||null,sens:parseInt(document.getElementById('f-sens').value)||null,obs:document.getElementById('f-obs').value||'',tiros,id:Date.now()});
+  treinos.sort((a,b)=>a.data.localeCompare(b.data));
+  save();showMsg('msg-add','✓ treino salvo!');limparForm();renderSummary();
+}
+function limparForm(){
+  ['f-dist','f-tempo','f-fcm','f-fcx','f-vel','f-sem','f-sens','f-obs','f-ntiros','f-tdur','f-tvel','f-tdesc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-tipo').value='regenerativo';
+  document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+  document.getElementById('tiros-section').style.display='none';
+  document.getElementById('tiros-fc-inputs').innerHTML='';
+}
+function salvarPeso(){
+  const data=document.getElementById('p-data').value,peso=parseFloat(document.getElementById('p-val').value);
+  if(!data||isNaN(peso)){showMsg('msg-peso','preencha data e peso.',true);return;}
+  if(pesos.some(p=>p.data===data)){if(!confirm('Já existe registro nesta data. Substituir?'))return;pesos=pesos.filter(p=>p.data!==data);}
+  pesos.push({data,peso,obs:document.getElementById('p-obs').value||'',id:Date.now()});
+  pesos.sort((a,b)=>a.data.localeCompare(b.data));
+  savePeso();showMsg('msg-peso','✓ peso salvo!');
+  document.getElementById('p-val').value='';document.getElementById('p-obs').value='';
+  document.getElementById('p-data').value=new Date().toISOString().slice(0,10);
+  renderPesoHist();renderSummary();
+}
+function deletarTreino(id){if(!confirm('Apagar este treino?'))return;treinos=treinos.filter(t=>t.id!==id);save();renderHist();renderSummary();}
+function deletarPeso(id){if(!confirm('Apagar?'))return;pesos=pesos.filter(p=>p.id!==id);savePeso();renderPesoHist();renderSummary();}
+
+function renderHist(){
+  const cont=document.getElementById('hist-content');
+  if(!treinos.length){cont.innerHTML='<div class="empty">nenhum treino ainda</div>';return;}
+  const s=[...treinos].sort((a,b)=>b.data.localeCompare(a.data));
+  let h='';
+  s.forEach(t=>{
+    const pill=t.tipo==='regenerativo'?'p-reg':t.tipo==='intervalada'?'p-int':'p-lon';
+    const fcLabel=t.tipo==='intervalada'?(t.tiros&&t.tiros.fcPicos&&t.tiros.fcPicos.length?Math.max(...t.tiros.fcPicos)+' bpm (máx)':t.fcMax?t.fcMax+' bpm (máx)':'—'):(t.fcMed?t.fcMed+' bpm (média)':'—');
+    const pace=t.dist&&t.tempo?ps(pd(t.dist,t.tempo))+'/km':'—';
+    h+=`<div class="hist-item">
+      <div class="hist-header">
+        <div style="display:flex;align-items:center;gap:6px;"><span class="pill ${pill}">${t.tipo}</span><span class="hist-date">${fmtData(t.data)}${t.semana?' · S'+t.semana:''}</span></div>
+        <button class="hist-del" onclick="deletarTreino(${t.id})">apagar</button>
+      </div>
+      <div class="hist-main">
+        <span class="hist-value">${t.dist?t.dist.toFixed(1)+'km':'—'}</span>
+        <span class="hist-unit">${t.tempo?t.tempo.toFixed(0)+"'":''}${pace!=='—'?' · '+pace:''}</span>
+      </div>
+      <div class="hist-meta">
+        ${fcLabel!=='—'?`<span class="hist-tag">FC: ${fcLabel}</span>`:''}
+        ${t.vel?`<span class="hist-tag">${t.vel}km/h</span>`:''}
+        ${t.sens?`<span class="hist-tag">sensação ${t.sens}/10</span>`:''}
+        ${t.obs?`<span class="hist-tag">${t.obs}</span>`:''}
+      </div>
+    </div>`;
+  });
+  cont.innerHTML=h;
+}
+
+function renderPesoHist(){
+  const cont=document.getElementById('peso-hist');
+  if(!pesos.length){cont.innerHTML='<div class="empty">nenhum peso registrado</div>';return;}
+  const s=[...pesos].sort((a,b)=>b.data.localeCompare(a.data));
+  let h='';
+  s.forEach((p,i)=>{
+    const prox=s[i+1];let badge='';
+    if(prox){const d=+(p.peso-prox.peso).toFixed(1);badge=d<0?`<span class="peso-badge pb-down">↓ ${Math.abs(d)}kg</span>`:d>0?`<span class="peso-badge pb-up">↑ +${d}kg</span>`:`<span class="peso-badge pb-same">= igual</span>`;}
+    h+=`<div class="peso-item"><div class="peso-left"><div class="peso-date">${fmtData(p.data)}${p.obs?' · '+p.obs:''}</div><div class="peso-val">${p.peso.toFixed(1)} kg</div></div><div style="display:flex;align-items:center;gap:8px;">${badge}<button onclick="deletarPeso(${p.id})" style="font-size:11px;padding:3px 9px;border-radius:5px;border:none;background:#fde8e8;color:#a32d2d;cursor:pointer;">×</button></div></div>`;
+  });
+  cont.innerHTML=h;
+}
+
+function normKeys(r){const n={};Object.keys(r).forEach(k=>{const norm=k.toString().toLowerCase().trim().replace(/\s*\(.*?\)/g,'').replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');n[norm]=r[k];});return n;}
+function findHeaderRow(ws,v0,v1){const ref=ws['!ref'];if(!ref)return 0;const range=XLSX.utils.decode_range(ref);for(let r=range.s.r;r<=Math.min(range.s.r+4,range.e.r);r++){const ca=ws[XLSX.utils.encode_cell({r,c:0})],cb=ws[XLSX.utils.encode_cell({r,c:1})];if(ca&&cb&&(ca.v||'').toString().toLowerCase().trim()===v0&&(cb.v||'').toString().toLowerCase().trim().includes(v1))return r;}return 0;}
+
+function importarArquivo(input){
+  const file=input.files[0];if(!file)return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      let addedT=0,skippedT=0,addedP=0,skippedP=0;
+      if(ext==='csv'){
+        const lines=e.target.result.split('\n').filter(l=>l.trim());
+        const headers=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+        const rows=lines.slice(1).map(line=>{const vals=line.split(',').map(v=>v.trim().replace(/"/g,''));const obj={};headers.forEach((h,i)=>obj[h]=vals[i]||'');return normKeys(obj);});
+        rows.forEach(r=>{
+          const iso=toISO(r.data||r.date||'');const tipo=(r.tipo||'').toLowerCase();const dist=parseFloat(r.dist||0);
+          if(!iso||!tipo||isNaN(dist)||dist===0)return;
+          const tipoN=tipo.includes('reg')?'regenerativo':tipo.includes('int')?'intervalada':tipo.includes('lon')?'longo':tipo;
+          if(treinos.some(t=>t.data===iso&&t.tipo===tipoN)){skippedT++;return;}
+          treinos.push({data:iso,tipo:tipoN,dist,tempo:parseFloat(r.tempo||0)||null,fcMed:parseInt(r.fc_med||0)||null,fcMax:parseInt(r.fc_max||0)||null,vel:parseFloat(r.vel||0)||null,semana:parseInt(r.semana||0)||null,sens:parseInt(r.sens||0)||null,obs:(r.obs||'').toString(),tiros:null,id:Date.now()+Math.random()});addedT++;
+        });
+      } else {
+        const wb=XLSX.read(e.target.result,{type:'array',raw:true});
+        const wsT=wb.Sheets['treinos']||wb.Sheets['Treinos'];
+        if(wsT){
+          const hr=findHeaderRow(wsT,'data','tipo');
+          XLSX.utils.sheet_to_json(wsT,{raw:true,defval:'',range:hr}).forEach(r=>{
+            const nr=normKeys(r);const iso=toISO(nr.data||nr.date||'');const tipo=(nr.tipo||'').toString().toLowerCase();const dist=parseFloat(nr.dist||0);
+            if(!iso||!tipo||isNaN(dist)||dist===0)return;
+            const tipoN=tipo.includes('reg')?'regenerativo':tipo.includes('int')?'intervalada':tipo.includes('lon')?'longo':tipo;
+            if(treinos.some(t=>t.data===iso&&t.tipo===tipoN)){skippedT++;return;}
+            treinos.push({data:iso,tipo:tipoN,dist,tempo:parseFloat(nr.tempo||0)||null,fcMed:parseInt(nr.fc_med||0)||null,fcMax:parseInt(nr.fc_max||0)||null,vel:parseFloat(nr.vel||0)||null,semana:parseInt(nr.semana||0)||null,sens:parseInt(nr.sens||0)||null,obs:(nr.obs||'').toString(),tiros:null,id:Date.now()+Math.random()});addedT++;
+          });
+        }
+        const wsP=wb.Sheets['pesos']||wb.Sheets['Pesos'];
+        if(wsP){
+          const hr=findHeaderRow(wsP,'data','peso');
+          XLSX.utils.sheet_to_json(wsP,{raw:true,defval:'',range:hr}).forEach(r=>{
+            const nr=normKeys(r);const iso=toISO(nr.data||nr.date||'');const peso=parseFloat(nr.peso||0);
+            if(!iso||isNaN(peso)||peso===0)return;
+            if(pesos.some(p=>p.data===iso)){skippedP++;return;}
+            pesos.push({data:iso,peso,obs:(nr.obs||'').toString(),id:Date.now()+Math.random()});addedP++;
+          });
+          pesos.sort((a,b)=>a.data.localeCompare(b.data));savePeso();
+        }
+      }
+      treinos.sort((a,b)=>a.data.localeCompare(b.data));save();renderAll();
+      let msg=`✓ ${addedT} treino(s)`;if(skippedT>0)msg+=` | ${skippedT} dup.`;if(addedP>0)msg+=` | ${addedP} peso(s)`;
+      showMsg('msg-import',msg+'!');
+    }catch(err){showMsg('msg-import','erro: '+err.message,true);}
+  };
+  if(ext==='csv')reader.readAsText(file);else reader.readAsArrayBuffer(file);
+  input.value='';
+}
+
+function exportarCSV(tipo){
+  let rows,headers,filename;
+  if(tipo==='treinos'){headers=['data','tipo','dist','tempo','pace','fc_med','fc_max','vel','semana','sens','obs'];rows=treinos.map(t=>[fmtData(t.data),t.tipo,t.dist||'',t.tempo||'',t.dist&&t.tempo?ps(pd(t.dist,t.tempo)):'',t.fcMed||'',t.fcMax||'',t.vel||'',t.semana||'',t.sens||'',t.obs||'']);filename='treinos_leonardo.csv';}
+  else{headers=['data','peso','obs'];rows=pesos.map(p=>[fmtData(p.data),p.peso,p.obs||'']);filename='pesos_leonardo.csv';}
+  const csv=[headers.join(','),...rows.map(r=>r.join(','))].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+}
+
+function rebuildVolChart(){
+  const rs=chartRanges.vol.start,re=chartRanges.vol.end;
+  const s=[...treinos].filter(t=>(!rs||t.data>=rs)&&(!re||t.data<=re)).sort((a,b)=>a.data.localeCompare(b.data));
+  const sems={};s.forEach(t=>{const k=t.semana||'?';sems[k]=(sems[k]||0)+(t.dist||0);});
+  const sk=Object.keys(sems).sort((a,b)=>+a-+b);
+  if(cVol)cVol.destroy();
+  cVol=new Chart(document.getElementById('cVol'),{type:'bar',
+    data:{labels:sk.length?sk.map(s=>'S'+s):['sem dados'],datasets:[{data:sk.length?sk.map(k=>+sems[k].toFixed(1)):[0],backgroundColor:'#1a3a5c',borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},plugins:{legend:{display:false}},
+      scales:{y:{grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:10}}}},
+      animation:{onComplete:function(){const c=this,ctx=c.ctx;ctx.save();ctx.font='bold 10px -apple-system,sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='bottom';c.data.datasets.forEach((ds,di)=>{c.getDatasetMeta(di).data.forEach((bar,i)=>{const v=ds.data[i];if(v&&v>0)ctx.fillText(v.toFixed(1),bar.x,bar.y+12);});});ctx.restore();}}}});
+}
+
+function rebuildPaceChart(){
+  const rs=chartRanges.pace.start,re=chartRanges.pace.end;
+  const s=[...treinos].sort((a,b)=>a.data.localeCompare(b.data));
+  const pF=s.filter(t=>{
+    if(!t.dist||!t.tempo)return false;
+    if(rs&&t.data<rs)return false;
+    if(re&&t.data>re)return false;
+    if(t.tipo==='regenerativo'&&paceFilter.reg)return true;
+    if(t.tipo==='longo'&&paceFilter.lon)return true;
+    return false;
+  });
+  if(cPace)cPace.destroy();
+  cPace=new Chart(document.getElementById('cPace'),{type:'line',
+    data:{labels:pF.length?pF.map(t=>fmtData(t.data)):['sem dados'],datasets:[{data:pF.length?pF.map(t=>+pd(t.dist,t.tempo).toFixed(2)):[0],borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,.08)',pointBackgroundColor:pF.length?pF.map(t=>tc(t.tipo)):['#ccc'],pointRadius:4,tension:0.3,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{reverse:true,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},callback:v=>ps(v)+'/km'}},x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}}}}});
+}
+
+function rebuildPesoChart(){
+  const rs=chartRanges.peso.start,re=chartRanges.peso.end;
+  const ps2=[...pesos].filter(p=>(!rs||p.data>=rs)&&(!re||p.data<=re)).sort((a,b)=>a.data.localeCompare(b.data));
+  if(cPeso)cPeso.destroy();
+  cPeso=new Chart(document.getElementById('cPeso'),{type:'line',
+    data:{labels:ps2.length?ps2.map(p=>fmtData(p.data)):['sem dados'],datasets:[
+      {data:ps2.length?ps2.map(p=>p.peso):[0],borderColor:'#D85A30',backgroundColor:'rgba(216,90,48,.08)',pointBackgroundColor:'#D85A30',pointRadius:4,tension:0.3,fill:true},
+      {data:ps2.length?ps2.map(()=>91):[91],borderColor:'rgba(29,158,117,.5)',borderDash:[5,4],pointRadius:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:88,max:97,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},callback:v=>v+'kg'}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
+}
+
+function renderAll(){
+  renderCharts();renderHist();renderPesoHist();
+  initSlider();
+  initChartSlider('vol',getVolDates);
+  initChartSlider('pace',getPaceDates);
+  initChartSlider('peso',getPesoDates);
+}
+
+window.onload=()=>{
+  document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+  document.getElementById('p-data').value=new Date().toISOString().slice(0,10);
+  loadAll();renderCharts();
+  setupSlider();initSlider();
+  setupChartSlider('vol', getVolDates, rebuildVolChart);
+  setupChartSlider('pace', getPaceDates, rebuildPaceChart);
+  setupChartSlider('peso', getPesoDates, rebuildPesoChart);
+  initChartSlider('vol', getVolDates);
+  initChartSlider('pace', getPaceDates);
+  initChartSlider('peso', getPesoDates);
+};
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(r => console.log('SW registrado'))
+      .catch(e => console.log('SW erro:', e));
+  });
+}
+</script>
+</body>
+</html>
