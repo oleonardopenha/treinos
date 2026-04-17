@@ -140,13 +140,67 @@ body{overflow-x:hidden;}
 /* EXPORT BTNS */
 .export-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .btn-export{padding:13px;border-radius:var(--radius-sm);border:0.5px solid var(--green);background:var(--green-bg);color:var(--green-txt);font-size:13px;font-weight:500;cursor:pointer;text-align:center;}
+/* COUNTDOWN */
+.countdown-banner{background:var(--navy);color:#fff;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.countdown-days{font-size:32px;font-weight:700;line-height:1;}
+.countdown-label{font-size:10px;color:#85b7eb;margin-top:2px;text-transform:uppercase;letter-spacing:.06em;}
+.countdown-name{font-size:12px;font-weight:500;color:#fff;}
+.countdown-date{font-size:10px;color:#85b7eb;margin-top:2px;}
+.countdown-edit-hint{font-size:10px;color:#85b7eb;margin-top:4px;text-decoration:underline;}
+.countdown-none{background:var(--surface2);border:1.5px dashed var(--border2);border-radius:var(--radius-sm);padding:12px 14px;text-align:center;margin-bottom:14px;cursor:pointer;color:var(--txt3);font-size:13px;}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-sheet{background:var(--surface);border-radius:20px 20px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-size:15px;font-weight:600;color:var(--txt);margin-bottom:16px;}
+.modal-actions{display:flex;gap:8px;margin-top:12px;}
+.btn-modal-save{flex:1;padding:13px;border-radius:var(--radius-sm);border:none;background:var(--navy);color:#fff;font-size:14px;font-weight:500;cursor:pointer;}
+.btn-modal-cancel{flex:1;padding:13px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);background:transparent;color:var(--txt2);font-size:14px;cursor:pointer;}
 </style>
 </head>
 <body>
 
+<!-- MODAL: EDITAR TREINO -->
+<div class="modal-overlay" id="modal-edit" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">editar treino</div>
+    <div class="grid-2"><div class="field"><label>data</label><input type="date" id="e-data"></div><div class="field"><label>tipo</label><select id="e-tipo" onchange="toggleTirosFormEdit()"><option value="regenerativo">regenerativo</option><option value="intervalada">intervalada</option><option value="longo">longo</option></select></div></div>
+    <div class="grid-2"><div class="field"><label>distância (km)</label><input type="number" id="e-dist" step="0.1" inputmode="decimal"></div><div class="field"><label>tempo (min)</label><input type="number" id="e-tempo" step="0.1" inputmode="decimal"></div></div>
+    <div class="grid-2"><div class="field"><label>FC média (bpm)</label><input type="number" id="e-fcm" inputmode="numeric"></div><div class="field"><label>FC máxima (bpm)</label><input type="number" id="e-fcx" inputmode="numeric"></div></div>
+    <div class="grid-2"><div class="field"><label>vel (km/h)</label><input type="number" id="e-vel" step="0.1" inputmode="decimal"></div><div class="field"><label>sensação</label><input type="number" id="e-sens" min="1" max="10" inputmode="numeric"></div></div>
+    <div class="field"><label>observações</label><input type="text" id="e-obs"></div>
+    <div class="tiros-section" id="e-tiros-section">
+      <div class="section-lbl" style="margin-top:4px;">detalhes dos tiros</div>
+      <div class="grid-2"><div class="field"><label>qtd de tiros</label><input type="number" id="e-ntiros" inputmode="numeric" onchange="renderTirosInputEdit()"></div><div class="field"><label>vel tiro (km/h)</label><input type="number" id="e-tvel" step="0.5" inputmode="decimal"></div></div>
+      <div class="grid-2"><div class="field"><label>duração cada (s)</label><input type="number" id="e-tdur" inputmode="numeric"></div><div class="field"><label>descanso (s)</label><input type="number" id="e-tdesc" inputmode="numeric"></div></div>
+      <div id="e-tiros-fc-inputs" class="tiros-grid"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeEditModal()">cancelar</button>
+      <button class="btn-modal-save" onclick="salvarEdicao()">salvar</button>
+    </div>
+    <div class="msg" id="msg-edit" style="margin-top:8px;"></div>
+  </div>
+</div>
+<!-- MODAL: CONFIGURAR PROVA -->
+<div class="modal-overlay" id="modal-prova" onclick="if(event.target===this)closeProvaModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">configurar prova</div>
+    <div class="field"><label>nome da prova</label><input type="text" id="prova-nome" placeholder="ex: Meia Maratona de Floripa"></div>
+    <div class="field"><label>data da prova</label><input type="date" id="prova-data"></div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeProvaModal()">cancelar</button>
+      <button class="btn-modal-save" onclick="salvarProva()">salvar</button>
+    </div>
+  </div>
+</div>
 <!-- PÁGINA: VISÃO GERAL -->
 <div class="page active" id="page-visao">
   <div class="page-title">Treinos — Leonardo 🏃‍♂️</div>
+  <div id="countdown-wrap"></div>
 
   <div class="cards-2">
     <div class="card accent full"><div class="card-label">semana atual (seg–dom)</div><div class="card-value" id="s-week">— km</div><div class="card-sub" id="s-week-sub">0 treinos</div></div>
@@ -250,7 +304,7 @@ body{overflow-x:hidden;}
     <div class="grid-2"><div class="field"><label>data</label><input type="date" id="f-data"></div><div class="field"><label>tipo</label><select id="f-tipo" onchange="toggleTirosForm()"><option value="regenerativo">regenerativo</option><option value="intervalada">intervalada</option><option value="longo">longo</option></select></div></div>
     <div class="grid-2"><div class="field"><label>distância (km)</label><input type="number" id="f-dist" placeholder="8.0" step="0.1" inputmode="decimal"></div><div class="field"><label>tempo (min)</label><input type="number" id="f-tempo" placeholder="51.8" step="0.1" inputmode="decimal"></div></div>
     <div class="grid-2"><div class="field"><label>FC média (bpm)</label><input type="number" id="f-fcm" placeholder="155" inputmode="numeric"></div><div class="field"><label>FC máxima (bpm)</label><input type="number" id="f-fcx" placeholder="175" inputmode="numeric"></div></div>
-    <div class="grid-3"><div class="field"><label>vel (km/h)</label><input type="number" id="f-vel" placeholder="9.5" step="0.1" inputmode="decimal"></div><div class="field"><label>semana #</label><input type="number" id="f-sem" placeholder="1" inputmode="numeric"></div><div class="field"><label>sensação</label><input type="number" id="f-sens" placeholder="8" min="1" max="10" inputmode="numeric"></div></div>
+    <div class="grid-2"><div class="field"><label>vel (km/h)</label><input type="number" id="f-vel" placeholder="9.5" step="0.1" inputmode="decimal"></div><div class="field"><label>sensação</label><input type="number" id="f-sens" placeholder="8" min="1" max="10" inputmode="numeric"></div></div>
     <div class="field"><label>observações</label><input type="text" id="f-obs" placeholder="ex: calor forte, lombar ok..."></div>
 
     <div class="tiros-section" id="tiros-section">
@@ -339,6 +393,7 @@ body{overflow-x:hidden;}
 <script>
 const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
+// ── DATE HELPERS ──────────────────────────────────────────────────────────────
 function toISO(val){
   if(val===null||val===undefined||val==='')return null;
   const s=val.toString().trim();
@@ -348,7 +403,6 @@ function toISO(val){
   if(s.length>10&&s.includes('T'))return s.slice(0,10);
   return null;
 }
-
 function fmtData(iso){
   if(!iso)return'—';
   const p=iso.slice(0,10).split('-');
@@ -356,7 +410,38 @@ function fmtData(iso){
   const yy=p[0].slice(2);
   return p[2]+'/'+String(parseInt(p[1])).padStart(2,'0')+'/'+yy;
 }
+function getMondayISO(dateISO){
+  const iso=toISO(dateISO);
+  if(!iso)return null;
+  try{
+    const d=new Date(iso+'T12:00:00');
+    if(isNaN(d.getTime()))return null;
+    const dow=d.getDay();
+    d.setDate(d.getDate()+(dow===0?-6:1-dow));
+    return d.toISOString().slice(0,10);
+  }catch(e){return null;}
+}
 
+// ── NORMALISE a treino object ──────────────────────────────────────────────────
+function normTreino(t){
+  const data=toISO(t.data);
+  if(!data)return null;
+  return{
+    id:t.id||Date.now()+Math.random(),
+    data,
+    tipo:(t.tipo||'').toLowerCase(),
+    dist:t.dist!=null?parseFloat(t.dist)||null:null,
+    tempo:t.tempo!=null?parseFloat(t.tempo)||null:null,
+    fcMed:t.fcMed!=null?parseInt(t.fcMed)||null:null,
+    fcMax:t.fcMax!=null?parseInt(t.fcMax)||null:null,
+    vel:t.vel!=null?parseFloat(t.vel)||null:null,
+    sens:t.sens!=null?parseInt(t.sens)||null:null,
+    obs:(t.obs||'').toString(),
+    tiros:t.tiros||null,
+  };
+}
+
+// ── STORAGE ────────────────────────────────────────────────────────────────────
 const TK='leonardo_treinos_v1',PK='leonardo_pesos_v1';
 let treinos=[],pesos=[];
 let cFC,cVol,cPace,cPeso;
@@ -368,11 +453,36 @@ const COR={reg:'#1D9E75',int:'#BE1E2D',lon:'#378ADD'};
 
 function save(){try{localStorage.setItem(TK,JSON.stringify(treinos));}catch(e){}}
 function savePeso(){try{localStorage.setItem(PK,JSON.stringify(pesos));}catch(e){}}
+
 function loadAll(){
-  try{const r=localStorage.getItem(TK);if(r)treinos=JSON.parse(r);}catch(e){treinos=[];}
-  try{const r=localStorage.getItem(PK);if(r)pesos=JSON.parse(r);}catch(e){pesos=[];}
+  try{
+    const raw=JSON.parse(localStorage.getItem(TK)||'[]');
+    const seen={};
+    raw.forEach(t=>{
+      const n=normTreino(t);
+      if(!n||!n.dist)return;
+      const key=n.data+'|'+n.tipo;
+      if(!seen[key])seen[key]=n; // keep first (oldest id) per data+tipo
+    });
+    treinos=Object.values(seen).sort((a,b)=>a.data.localeCompare(b.data));
+    save(); // write clean version back
+  }catch(e){treinos=[];}
+  try{
+    const raw=JSON.parse(localStorage.getItem(PK)||'[]');
+    const seen={};
+    raw.forEach(p=>{
+      const data=toISO(p.data);
+      if(!data)return;
+      const peso=parseFloat(p.peso)||null;
+      if(!peso)return;
+      if(!seen[data])seen[data]={...p,data,peso};
+    });
+    pesos=Object.values(seen).sort((a,b)=>a.data.localeCompare(b.data));
+    savePeso();
+  }catch(e){pesos=[];}
 }
 
+// ── NAV ────────────────────────────────────────────────────────────────────────
 function showPage(p){
   document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
@@ -384,11 +494,14 @@ function showPage(p){
   window.scrollTo(0,0);
 }
 
+// ── MATH HELPERS ───────────────────────────────────────────────────────────────
 function pd(d,t){if(!d||!t||d==0)return null;return t/d;}
 function ps(dec){if(!dec)return'—';const m=Math.floor(dec),s=Math.round((dec-m)*60);return m+':'+String(s).padStart(2,'0');}
 function tc(tipo){return COR[tipo==='regenerativo'?'reg':tipo==='intervalada'?'int':'lon']||'#888';}
+function n1(v){const n=parseFloat(v);return isNaN(n)?null:parseFloat(n.toFixed(1));}
 function showMsg(id,txt,err=false){const el=document.getElementById(id);el.textContent=txt;el.className='msg '+(err?'err':'ok');el.style.display='block';setTimeout(()=>el.style.display='none',4000);}
 
+// ── LEGEND / FILTER ────────────────────────────────────────────────────────────
 function toggleLegend(key){
   legState[key]=!legState[key];
   document.getElementById('leg-'+key).classList.toggle('inactive',!legState[key]);
@@ -399,7 +512,6 @@ function togglePaceFilter(key){
   document.getElementById('fp-'+key).classList.toggle('inactive',!paceFilter[key]);
   rebuildPaceChart();
 }
-
 function getFCVal(t){
   const key=t.tipo==='regenerativo'?'reg':t.tipo==='intervalada'?'int':'lon';
   if(!legState[key])return null;
@@ -407,12 +519,12 @@ function getFCVal(t){
   if(t.tiros&&t.tiros.fcPicos&&t.tiros.fcPicos.length)return Math.max(...t.tiros.fcPicos);
   return t.fcMax||null;
 }
-
 function getFilteredTreinos(){
   if(!rangeStart&&!rangeEnd)return treinos;
   return treinos.filter(t=>(!rangeStart||t.data>=rangeStart)&&(!rangeEnd||t.data<=rangeEnd));
 }
 
+// ── CHARTS ─────────────────────────────────────────────────────────────────────
 function rebuildFCChart(){
   const s=[...getFilteredTreinos()].sort((a,b)=>a.data.localeCompare(b.data));
   const fcF=s.filter(t=>t.dist);
@@ -434,11 +546,54 @@ function rebuildFCChart(){
   });
 }
 
+function rebuildVolChart(){
+  const rs=chartRanges.vol.start,re=chartRanges.vol.end;
+  const s=[...treinos].filter(t=>(!rs||t.data>=rs)&&(!re||t.data<=re));
+  const sems={};
+  s.forEach(t=>{
+    const k=getMondayISO(t.data);
+    if(k)sems[k]=(sems[k]||0)+(parseFloat(t.dist)||0);
+  });
+  const sk=Object.keys(sems).sort();
+  const labels=sk.map(iso=>{const p=iso.split('-');return p[2]+'/'+String(parseInt(p[1]));});
+  const vals=sk.map(k=>parseFloat(sems[k].toFixed(1)));
+  if(cVol)cVol.destroy();
+  cVol=new Chart(document.getElementById('cVol'),{type:'bar',
+    data:{labels:sk.length?labels:['sem dados'],datasets:[{data:sk.length?vals:[0],backgroundColor:'#1a3a5c',borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},plugins:{legend:{display:false}},
+      scales:{y:{grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}}},
+      animation:{onComplete:function(){const c=this,ctx=c.ctx;ctx.save();ctx.font='bold 10px -apple-system,sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='bottom';c.data.datasets.forEach((ds,di)=>{c.getDatasetMeta(di).data.forEach((bar,i)=>{const v=parseFloat(ds.data[i]);if(v>0)ctx.fillText(v.toFixed(1),bar.x,bar.y+12);});});ctx.restore();}}}});
+}
+
 function rebuildPaceChart(){
+  const rs=chartRanges.pace.start,re=chartRanges.pace.end;
   const s=[...treinos].sort((a,b)=>a.data.localeCompare(b.data));
-  const pF=s.filter(t=>{if(!t.dist||!t.tempo)return false;if(t.tipo==='regenerativo'&&paceFilter.reg)return true;if(t.tipo==='longo'&&paceFilter.lon)return true;return false;});
+  const pF=s.filter(t=>{
+    if(!t.dist||!t.tempo)return false;
+    if(rs&&t.data<rs)return false;
+    if(re&&t.data>re)return false;
+    if(t.tipo==='regenerativo'&&paceFilter.reg)return true;
+    if(t.tipo==='longo'&&paceFilter.lon)return true;
+    return false;
+  });
   if(cPace)cPace.destroy();
-  cPace=new Chart(document.getElementById('cPace'),{type:'line',data:{labels:pF.length?pF.map(t=>fmtData(t.data)):['sem dados'],datasets:[{data:pF.length?pF.map(t=>+pd(t.dist,t.tempo).toFixed(2)):[0],borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,.08)',pointBackgroundColor:pF.length?pF.map(t=>tc(t.tipo)):['#ccc'],pointRadius:4,tension:0.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{reverse:true,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},callback:v=>ps(v)+'/km'}},x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}}}}});
+  cPace=new Chart(document.getElementById('cPace'),{type:'line',
+    data:{labels:pF.length?pF.map(t=>fmtData(t.data)):['sem dados'],datasets:[{data:pF.length?pF.map(t=>parseFloat(pd(t.dist,t.tempo).toFixed(2))):[0],borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,.08)',pointBackgroundColor:pF.length?pF.map(t=>tc(t.tipo)):['#ccc'],pointRadius:4,tension:0.3,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{reverse:true,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},callback:v=>ps(v)+'/km'}},x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}}}}});
+}
+
+function rebuildPesoChart(){
+  const rs=chartRanges.peso.start,re=chartRanges.peso.end;
+  const ps2=[...pesos].filter(p=>(!rs||p.data>=rs)&&(!re||p.data<=re)).sort((a,b)=>a.data.localeCompare(b.data));
+  if(cPeso)cPeso.destroy();
+  cPeso=new Chart(document.getElementById('cPeso'),{type:'line',
+    data:{labels:ps2.length?ps2.map(p=>fmtData(p.data)):['sem dados'],datasets:[
+      {data:ps2.length?ps2.map(p=>parseFloat(p.peso)):[0],borderColor:'#D85A30',backgroundColor:'rgba(216,90,48,.08)',pointBackgroundColor:'#D85A30',pointRadius:4,tension:0.3,fill:true},
+      {data:ps2.length?ps2.map(()=>91):[91],borderColor:'rgba(29,158,117,.5)',borderDash:[5,4],pointRadius:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{min:88,max:97,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},callback:v=>v+'kg'}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
 }
 
 function renderSummary(){
@@ -446,28 +601,28 @@ function renderSummary(){
   const dow=hoje.getDay();ini.setDate(hoje.getDate()-(dow===0?6:dow-1));
   const semStr=ini.toISOString().slice(0,10);
   const sem=treinos.filter(t=>t.data>=semStr);
-  const vol=sem.reduce((a,t)=>a+(t.dist||0),0);
+  const vol=sem.reduce((a,t)=>a+(parseFloat(t.dist)||0),0);
   document.getElementById('s-week').textContent=vol.toFixed(1)+' km';
   document.getElementById('s-week-sub').textContent=sem.length+' treino'+(sem.length!==1?'s':'');
   const longs=treinos.filter(t=>t.tipo==='longo'&&t.dist&&t.tempo);
   const ll=longs.length?longs[longs.length-1]:null;
   document.getElementById('s-pace').textContent=ll?ps(pd(ll.dist,ll.tempo))+'/km':'—';
-  document.getElementById('s-pace-sub').textContent=ll?(ll.dist.toFixed(1)+'km — '+fmtData(ll.data)):'—';
+  document.getElementById('s-pace-sub').textContent=ll?(parseFloat(ll.dist).toFixed(1)+'km — '+fmtData(ll.data)):'—';
   const regs=treinos.filter(t=>t.tipo==='regenerativo'&&t.fcMed);
   const lr=regs.length?regs[regs.length-1]:null;
   document.getElementById('s-fc').textContent=lr?Math.round(lr.fcMed)+' bpm':'—';
-  document.getElementById('s-fc-sub').textContent=lr?((lr.dist?lr.dist.toFixed(1)+'km — ':'')+fmtData(lr.data)):'—';
+  document.getElementById('s-fc-sub').textContent=lr?((lr.dist?parseFloat(lr.dist).toFixed(1)+'km — ':'')+fmtData(lr.data)):'—';
   const ints=treinos.filter(t=>t.tipo==='intervalada');
   const li=ints.length?ints[ints.length-1]:null;
   let fcMaxInt='—';
   if(li){if(li.tiros&&li.tiros.fcPicos&&li.tiros.fcPicos.length)fcMaxInt=Math.max(...li.tiros.fcPicos)+' bpm';else if(li.fcMax)fcMaxInt=li.fcMax+' bpm';}
   document.getElementById('s-int').textContent=fcMaxInt;
-  document.getElementById('s-int-sub').textContent=li?((li.dist?li.dist.toFixed(1)+'km — ':'')+fmtData(li.data)):'—';
+  document.getElementById('s-int-sub').textContent=li?((li.dist?parseFloat(li.dist).toFixed(1)+'km — ':'')+fmtData(li.data)):'—';
   if(pesos.length){
     const ul=pesos[pesos.length-1],pn=pesos.length>1?pesos[pesos.length-2]:null;
-    document.getElementById('s-peso').textContent=ul.peso.toFixed(1)+' kg';
+    document.getElementById('s-peso').textContent=parseFloat(ul.peso).toFixed(1)+' kg';
     let sub='meta: 91 kg';
-    if(pn){const d=+(ul.peso-pn.peso).toFixed(1);sub=(d<0?'↓ '+Math.abs(d)+'kg':d>0?'↑ +'+d+'kg':'= igual')+' vs ant.';}
+    if(pn){const d=+(parseFloat(ul.peso)-parseFloat(pn.peso)).toFixed(1);sub=(d<0?'↓ '+Math.abs(d)+'kg':d>0?'↑ +'+d+'kg':'= igual')+' vs ant.';}
     document.getElementById('s-peso-sub').textContent=sub;
   }
 }
@@ -475,12 +630,12 @@ function renderSummary(){
 function renderCharts(){
   renderSummary();
   rebuildFCChart();
-rebuildVolChart();
+  rebuildVolChart();
   rebuildPaceChart();
   rebuildPesoChart();
 }
 
-// SLIDER
+// ── FC SLIDER ──────────────────────────────────────────────────────────────────
 function initSlider(){
   const sorted=[...treinos].sort((a,b)=>a.data.localeCompare(b.data));
   if(sorted.length<2){document.getElementById('range-container').style.opacity='.3';return;}
@@ -511,8 +666,9 @@ function dateAtPct(pct){
   if(s.length<2)return null;
   return s[Math.max(0,Math.min(s.length-1,Math.round(pct*(s.length-1))))].data;
 }
-// ---- GENERIC SLIDER ----
-function initChartSlider(key, getItems){
+
+// ── GENERIC CHART SLIDER ───────────────────────────────────────────────────────
+function initChartSlider(key,getItems){
   const items=[...getItems()].filter(x=>x).sort();
   const container=document.getElementById(key+'-range-container');
   if(!container)return;
@@ -522,7 +678,6 @@ function initChartSlider(key, getItems){
   updateSliderPosEl(key,0,1);
   document.getElementById(key+'-range-label').textContent='todos';
 }
-
 function updateSliderPosEl(key,l,r){
   const fill=document.getElementById(key+'-track-fill');
   const tl=document.getElementById(key+'-thumb-left');
@@ -531,8 +686,7 @@ function updateSliderPosEl(key,l,r){
   tl.style.left=(l*100)+'%';tr.style.left=(r*100)+'%';
   fill.style.left=(l*100)+'%';fill.style.width=((r-l)*100)+'%';
 }
-
-function setupChartSlider(key, getItems, onUpdate){
+function setupChartSlider(key,getItems,onUpdate){
   const container=document.getElementById(key+'-range-container');
   const tl=document.getElementById(key+'-thumb-left');
   const tr=document.getElementById(key+'-thumb-right');
@@ -563,7 +717,6 @@ function setupChartSlider(key, getItems, onUpdate){
   document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);
   document.addEventListener('touchmove',onMove,{passive:false});document.addEventListener('touchend',onUp);
 }
-
 function resetRangeChart(key){
   chartRanges[key].start=null;chartRanges[key].end=null;
   updateSliderPosEl(key,0,1);
@@ -572,7 +725,6 @@ function resetRangeChart(key){
   if(key==='pace')rebuildPaceChart();
   if(key==='peso')rebuildPesoChart();
 }
-
 function getVolDates(){return treinos.map(t=>t.data);}
 function getPaceDates(){return treinos.filter(t=>(t.tipo==='regenerativo'&&paceFilter.reg)||(t.tipo==='longo'&&paceFilter.lon)).filter(t=>t.dist&&t.tempo).map(t=>t.data);}
 function getPesoDates(){return pesos.map(p=>p.data);}
@@ -604,38 +756,37 @@ function setupSlider(){
   document.addEventListener('touchmove',onMove,{passive:false});document.addEventListener('touchend',onUp);
 }
 
-// FORMULÁRIO TREINO
+// ── FORM: ADD TREINO ───────────────────────────────────────────────────────────
 function toggleTirosForm(){document.getElementById('tiros-section').style.display=document.getElementById('f-tipo').value==='intervalada'?'block':'none';}
 function renderTirosInput(){
   const n=parseInt(document.getElementById('f-ntiros').value)||0;
   const cont=document.getElementById('tiros-fc-inputs');
   cont.innerHTML='';
-  for(let i=1;i<=n;i++){
-    const d=document.createElement('div');d.className='tiro-field';
-    d.innerHTML=`<label>tiro ${i}</label><input type="number" id="fc-tiro-${i}" placeholder="175" inputmode="numeric">`;
-    cont.appendChild(d);
-  }
+  for(let i=1;i<=n;i++){const d=document.createElement('div');d.className='tiro-field';d.innerHTML=`<label>tiro ${i}</label><input type="number" id="fc-tiro-${i}" placeholder="175" inputmode="numeric">`;cont.appendChild(d);}
 }
 function salvarTreino(){
   const data=document.getElementById('f-data').value,tipo=document.getElementById('f-tipo').value,dist=parseFloat(document.getElementById('f-dist').value);
   if(!data||!tipo||isNaN(dist)){showMsg('msg-add','preencha ao menos data, tipo e distância.',true);return;}
+  if(treinos.some(t=>t.data===data&&t.tipo===tipo)){showMsg('msg-add','já existe treino nesta data e tipo.',true);return;}
   let tiros=null;
   if(tipo==='intervalada'){
     const n=parseInt(document.getElementById('f-ntiros').value)||0,dur=parseInt(document.getElementById('f-tdur').value)||null,vel=parseFloat(document.getElementById('f-tvel').value)||null,desc=parseInt(document.getElementById('f-tdesc').value)||null,fcPicos=[];
     for(let i=1;i<=n;i++){const v=parseInt(document.getElementById('fc-tiro-'+i)?.value);if(v)fcPicos.push(v);}
     if(n>0)tiros={n,duracao:dur,vel,descanso:desc,fcPicos};
   }
-  treinos.push({data,tipo,dist,tempo:parseFloat(document.getElementById('f-tempo').value)||null,fcMed:parseInt(document.getElementById('f-fcm').value)||null,fcMax:parseInt(document.getElementById('f-fcx').value)||null,vel:parseFloat(document.getElementById('f-vel').value)||null,semana:parseInt(document.getElementById('f-sem').value)||null,sens:parseInt(document.getElementById('f-sens').value)||null,obs:document.getElementById('f-obs').value||'',tiros,id:Date.now()});
+  treinos.push({data,tipo,dist,tempo:parseFloat(document.getElementById('f-tempo').value)||null,fcMed:parseInt(document.getElementById('f-fcm').value)||null,fcMax:parseInt(document.getElementById('f-fcx').value)||null,vel:parseFloat(document.getElementById('f-vel').value)||null,sens:parseInt(document.getElementById('f-sens').value)||null,obs:document.getElementById('f-obs').value||'',tiros,id:Date.now()});
   treinos.sort((a,b)=>a.data.localeCompare(b.data));
   save();showMsg('msg-add','✓ treino salvo!');limparForm();renderSummary();
 }
 function limparForm(){
-  ['f-dist','f-tempo','f-fcm','f-fcx','f-vel','f-sem','f-sens','f-obs','f-ntiros','f-tdur','f-tvel','f-tdesc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-dist','f-tempo','f-fcm','f-fcx','f-vel','f-sens','f-obs','f-ntiros','f-tdur','f-tvel','f-tdesc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-tipo').value='regenerativo';
   document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
   document.getElementById('tiros-section').style.display='none';
   document.getElementById('tiros-fc-inputs').innerHTML='';
 }
+
+// ── FORM: ADD PESO ─────────────────────────────────────────────────────────────
 function salvarPeso(){
   const data=document.getElementById('p-data').value,peso=parseFloat(document.getElementById('p-val').value);
   if(!data||isNaN(peso)){showMsg('msg-peso','preencha data e peso.',true);return;}
@@ -647,9 +798,12 @@ function salvarPeso(){
   document.getElementById('p-data').value=new Date().toISOString().slice(0,10);
   renderPesoHist();renderSummary();
 }
+
+// ── DELETE ─────────────────────────────────────────────────────────────────────
 function deletarTreino(id){if(!confirm('Apagar este treino?'))return;treinos=treinos.filter(t=>t.id!==id);save();renderHist();renderSummary();}
 function deletarPeso(id){if(!confirm('Apagar?'))return;pesos=pesos.filter(p=>p.id!==id);savePeso();renderPesoHist();renderSummary();}
 
+// ── RENDER HIST ────────────────────────────────────────────────────────────────
 function renderHist(){
   const cont=document.getElementById('hist-content');
   if(!treinos.length){cont.innerHTML='<div class="empty">nenhum treino ainda</div>';return;}
@@ -661,12 +815,12 @@ function renderHist(){
     const pace=t.dist&&t.tempo?ps(pd(t.dist,t.tempo))+'/km':'—';
     h+=`<div class="hist-item">
       <div class="hist-header">
-        <div style="display:flex;align-items:center;gap:6px;"><span class="pill ${pill}">${t.tipo}</span><span class="hist-date">${fmtData(t.data)}${t.semana?' · S'+t.semana:''}</span></div>
-        <button class="hist-del" onclick="deletarTreino(${t.id})">apagar</button>
+        <div style="display:flex;align-items:center;gap:6px;"><span class="pill ${pill}">${t.tipo}</span><span class="hist-date">${fmtData(t.data)}</span></div>
+        <div style="display:flex;gap:6px;"><button class="hist-del" style="background:#daeaf8;color:#185fa5;" onclick="abrirEditModal(${t.id})">editar</button><button class="hist-del" onclick="deletarTreino(${t.id})">apagar</button></div>
       </div>
       <div class="hist-main">
-        <span class="hist-value">${t.dist?t.dist.toFixed(1)+'km':'—'}</span>
-        <span class="hist-unit">${t.tempo?t.tempo.toFixed(0)+"'":''}${pace!=='—'?' · '+pace:''}</span>
+        <span class="hist-value">${t.dist?parseFloat(t.dist).toFixed(1)+'km':'—'}</span>
+        <span class="hist-unit">${t.tempo?parseFloat(t.tempo).toFixed(0)+"'":''}${pace!=='—'?' · '+pace:''}</span>
       </div>
       <div class="hist-meta">
         ${fcLabel!=='—'?`<span class="hist-tag">FC: ${fcLabel}</span>`:''}
@@ -686,12 +840,13 @@ function renderPesoHist(){
   let h='';
   s.forEach((p,i)=>{
     const prox=s[i+1];let badge='';
-    if(prox){const d=+(p.peso-prox.peso).toFixed(1);badge=d<0?`<span class="peso-badge pb-down">↓ ${Math.abs(d)}kg</span>`:d>0?`<span class="peso-badge pb-up">↑ +${d}kg</span>`:`<span class="peso-badge pb-same">= igual</span>`;}
-    h+=`<div class="peso-item"><div class="peso-left"><div class="peso-date">${fmtData(p.data)}${p.obs?' · '+p.obs:''}</div><div class="peso-val">${p.peso.toFixed(1)} kg</div></div><div style="display:flex;align-items:center;gap:8px;">${badge}<button onclick="deletarPeso(${p.id})" style="font-size:11px;padding:3px 9px;border-radius:5px;border:none;background:#fde8e8;color:#a32d2d;cursor:pointer;">×</button></div></div>`;
+    if(prox){const d=+(parseFloat(p.peso)-parseFloat(prox.peso)).toFixed(1);badge=d<0?`<span class="peso-badge pb-down">↓ ${Math.abs(d)}kg</span>`:d>0?`<span class="peso-badge pb-up">↑ +${d}kg</span>`:`<span class="peso-badge pb-same">= igual</span>`;}
+    h+=`<div class="peso-item"><div class="peso-left"><div class="peso-date">${fmtData(p.data)}${p.obs?' · '+p.obs:''}</div><div class="peso-val">${parseFloat(p.peso).toFixed(1)} kg</div></div><div style="display:flex;align-items:center;gap:8px;">${badge}<button onclick="deletarPeso(${p.id})" style="font-size:11px;padding:3px 9px;border-radius:5px;border:none;background:#fde8e8;color:#a32d2d;cursor:pointer;">×</button></div></div>`;
   });
   cont.innerHTML=h;
 }
 
+// ── IMPORT / EXPORT ────────────────────────────────────────────────────────────
 function normKeys(r){const n={};Object.keys(r).forEach(k=>{const norm=k.toString().toLowerCase().trim().replace(/\s*\(.*?\)/g,'').replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');n[norm]=r[k];});return n;}
 function findHeaderRow(ws,v0,v1){const ref=ws['!ref'];if(!ref)return 0;const range=XLSX.utils.decode_range(ref);for(let r=range.s.r;r<=Math.min(range.s.r+4,range.e.r);r++){const ca=ws[XLSX.utils.encode_cell({r,c:0})],cb=ws[XLSX.utils.encode_cell({r,c:1})];if(ca&&cb&&(ca.v||'').toString().toLowerCase().trim()===v0&&(cb.v||'').toString().toLowerCase().trim().includes(v1))return r;}return 0;}
 
@@ -702,30 +857,24 @@ function importarArquivo(input){
   reader.onload=function(e){
     try{
       let addedT=0,skippedT=0,addedP=0,skippedP=0;
+      const addTreino=(raw)=>{
+        const iso=toISO(raw.data||raw.date||'');
+        const tipo=(raw.tipo||'').toString().toLowerCase();
+        const dist=parseFloat(raw.dist||0);
+        if(!iso||!tipo||isNaN(dist)||dist===0)return;
+        const tipoN=tipo.includes('reg')?'regenerativo':tipo.includes('int')?'intervalada':tipo.includes('lon')?'longo':tipo;
+        if(treinos.some(t=>t.data===iso&&t.tipo===tipoN)){skippedT++;return;}
+        treinos.push({data:iso,tipo:tipoN,dist,tempo:parseFloat(raw.tempo||0)||null,fcMed:parseInt(raw.fc_med||0)||null,fcMax:parseInt(raw.fc_max||0)||null,vel:parseFloat(raw.vel||0)||null,sens:parseInt(raw.sens||0)||null,obs:(raw.obs||'').toString(),tiros:null,id:Date.now()+Math.random()});
+        addedT++;
+      };
       if(ext==='csv'){
         const lines=e.target.result.split('\n').filter(l=>l.trim());
         const headers=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
-        const rows=lines.slice(1).map(line=>{const vals=line.split(',').map(v=>v.trim().replace(/"/g,''));const obj={};headers.forEach((h,i)=>obj[h]=vals[i]||'');return normKeys(obj);});
-        rows.forEach(r=>{
-          const iso=toISO(r.data||r.date||'');const tipo=(r.tipo||'').toLowerCase();const dist=parseFloat(r.dist||0);
-          if(!iso||!tipo||isNaN(dist)||dist===0)return;
-          const tipoN=tipo.includes('reg')?'regenerativo':tipo.includes('int')?'intervalada':tipo.includes('lon')?'longo':tipo;
-          if(treinos.some(t=>t.data===iso&&t.tipo===tipoN)){skippedT++;return;}
-          treinos.push({data:iso,tipo:tipoN,dist,tempo:parseFloat(r.tempo||0)||null,fcMed:parseInt(r.fc_med||0)||null,fcMax:parseInt(r.fc_max||0)||null,vel:parseFloat(r.vel||0)||null,semana:parseInt(r.semana||0)||null,sens:parseInt(r.sens||0)||null,obs:(r.obs||'').toString(),tiros:null,id:Date.now()+Math.random()});addedT++;
-        });
+        lines.slice(1).forEach(line=>{const vals=line.split(',').map(v=>v.trim().replace(/"/g,''));const obj={};headers.forEach((h,i)=>obj[h]=vals[i]||'');addTreino(normKeys(obj));});
       } else {
         const wb=XLSX.read(e.target.result,{type:'array',raw:true});
         const wsT=wb.Sheets['treinos']||wb.Sheets['Treinos'];
-        if(wsT){
-          const hr=findHeaderRow(wsT,'data','tipo');
-          XLSX.utils.sheet_to_json(wsT,{raw:true,defval:'',range:hr}).forEach(r=>{
-            const nr=normKeys(r);const iso=toISO(nr.data||nr.date||'');const tipo=(nr.tipo||'').toString().toLowerCase();const dist=parseFloat(nr.dist||0);
-            if(!iso||!tipo||isNaN(dist)||dist===0)return;
-            const tipoN=tipo.includes('reg')?'regenerativo':tipo.includes('int')?'intervalada':tipo.includes('lon')?'longo':tipo;
-            if(treinos.some(t=>t.data===iso&&t.tipo===tipoN)){skippedT++;return;}
-            treinos.push({data:iso,tipo:tipoN,dist,tempo:parseFloat(nr.tempo||0)||null,fcMed:parseInt(nr.fc_med||0)||null,fcMax:parseInt(nr.fc_max||0)||null,vel:parseFloat(nr.vel||0)||null,semana:parseInt(nr.semana||0)||null,sens:parseInt(nr.sens||0)||null,obs:(nr.obs||'').toString(),tiros:null,id:Date.now()+Math.random()});addedT++;
-          });
-        }
+        if(wsT){const hr=findHeaderRow(wsT,'data','tipo');XLSX.utils.sheet_to_json(wsT,{raw:true,defval:'',range:hr}).forEach(r=>addTreino(normKeys(r)));}
         const wsP=wb.Sheets['pesos']||wb.Sheets['Pesos'];
         if(wsP){
           const hr=findHeaderRow(wsP,'data','peso');
@@ -749,54 +898,10 @@ function importarArquivo(input){
 
 function exportarCSV(tipo){
   let rows,headers,filename;
-  if(tipo==='treinos'){headers=['data','tipo','dist','tempo','pace','fc_med','fc_max','vel','semana','sens','obs'];rows=treinos.map(t=>[fmtData(t.data),t.tipo,t.dist||'',t.tempo||'',t.dist&&t.tempo?ps(pd(t.dist,t.tempo)):'',t.fcMed||'',t.fcMax||'',t.vel||'',t.semana||'',t.sens||'',t.obs||'']);filename='treinos_leonardo.csv';}
+  if(tipo==='treinos'){headers=['data','tipo','dist','tempo','pace','fc_med','fc_max','vel','sens','obs'];rows=treinos.map(t=>[fmtData(t.data),t.tipo,t.dist||'',t.tempo||'',t.dist&&t.tempo?ps(pd(t.dist,t.tempo)):'',t.fcMed||'',t.fcMax||'',t.vel||'',t.sens||'',t.obs||'']);filename='treinos_leonardo.csv';}
   else{headers=['data','peso','obs'];rows=pesos.map(p=>[fmtData(p.data),p.peso,p.obs||'']);filename='pesos_leonardo.csv';}
   const csv=[headers.join(','),...rows.map(r=>r.join(','))].join('\n');
   const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
-}
-
-function rebuildVolChart(){
-  const rs=chartRanges.vol.start,re=chartRanges.vol.end;
-  const s=[...treinos].filter(t=>(!rs||t.data>=rs)&&(!re||t.data<=re)).sort((a,b)=>a.data.localeCompare(b.data));
-  const sems={};s.forEach(t=>{const k=t.semana||'?';sems[k]=(sems[k]||0)+(t.dist||0);});
-  const sk=Object.keys(sems).sort((a,b)=>+a-+b);
-  if(cVol)cVol.destroy();
-  cVol=new Chart(document.getElementById('cVol'),{type:'bar',
-    data:{labels:sk.length?sk.map(s=>'S'+s):['sem dados'],datasets:[{data:sk.length?sk.map(k=>+sems[k].toFixed(1)):[0],backgroundColor:'#1a3a5c',borderRadius:3}]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},plugins:{legend:{display:false}},
-      scales:{y:{grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:10}}}},
-      animation:{onComplete:function(){const c=this,ctx=c.ctx;ctx.save();ctx.font='bold 10px -apple-system,sans-serif';ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='bottom';c.data.datasets.forEach((ds,di)=>{c.getDatasetMeta(di).data.forEach((bar,i)=>{const v=ds.data[i];if(v&&v>0)ctx.fillText(v.toFixed(1),bar.x,bar.y+12);});});ctx.restore();}}}});
-}
-
-function rebuildPaceChart(){
-  const rs=chartRanges.pace.start,re=chartRanges.pace.end;
-  const s=[...treinos].sort((a,b)=>a.data.localeCompare(b.data));
-  const pF=s.filter(t=>{
-    if(!t.dist||!t.tempo)return false;
-    if(rs&&t.data<rs)return false;
-    if(re&&t.data>re)return false;
-    if(t.tipo==='regenerativo'&&paceFilter.reg)return true;
-    if(t.tipo==='longo'&&paceFilter.lon)return true;
-    return false;
-  });
-  if(cPace)cPace.destroy();
-  cPace=new Chart(document.getElementById('cPace'),{type:'line',
-    data:{labels:pF.length?pF.map(t=>fmtData(t.data)):['sem dados'],datasets:[{data:pF.length?pF.map(t=>+pd(t.dist,t.tempo).toFixed(2)):[0],borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,.08)',pointBackgroundColor:pF.length?pF.map(t=>tc(t.tipo)):['#ccc'],pointRadius:4,tension:0.3,fill:true}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{reverse:true,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},callback:v=>ps(v)+'/km'}},x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}}}}});
-}
-
-function rebuildPesoChart(){
-  const rs=chartRanges.peso.start,re=chartRanges.peso.end;
-  const ps2=[...pesos].filter(p=>(!rs||p.data>=rs)&&(!re||p.data<=re)).sort((a,b)=>a.data.localeCompare(b.data));
-  if(cPeso)cPeso.destroy();
-  cPeso=new Chart(document.getElementById('cPeso'),{type:'line',
-    data:{labels:ps2.length?ps2.map(p=>fmtData(p.data)):['sem dados'],datasets:[
-      {data:ps2.length?ps2.map(p=>p.peso):[0],borderColor:'#D85A30',backgroundColor:'rgba(216,90,48,.08)',pointBackgroundColor:'#D85A30',pointRadius:4,tension:0.3,fill:true},
-      {data:ps2.length?ps2.map(()=>91):[91],borderColor:'rgba(29,158,117,.5)',borderDash:[5,4],pointRadius:0}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{y:{min:88,max:97,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},callback:v=>v+'kg'}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
 }
 
 function renderAll(){
@@ -807,18 +912,106 @@ function renderAll(){
   initChartSlider('peso',getPesoDates);
 }
 
+// ── MODAL EDITAR TREINO ────────────────────────────────────────────────────────
+let editingId=null;
+function abrirEditModal(id){
+  const t=treinos.find(x=>x.id===id);if(!t)return;
+  editingId=id;
+  document.getElementById('e-data').value=t.data;
+  document.getElementById('e-tipo').value=t.tipo;
+  document.getElementById('e-dist').value=t.dist||'';
+  document.getElementById('e-tempo').value=t.tempo||'';
+  document.getElementById('e-fcm').value=t.fcMed||'';
+  document.getElementById('e-fcx').value=t.fcMax||'';
+  document.getElementById('e-vel').value=t.vel||'';
+  document.getElementById('e-sens').value=t.sens||'';
+  document.getElementById('e-obs').value=t.obs||'';
+  const ts=document.getElementById('e-tiros-section');
+  if(t.tipo==='intervalada'){
+    ts.style.display='block';
+    if(t.tiros){
+      document.getElementById('e-ntiros').value=t.tiros.n||'';
+      document.getElementById('e-tvel').value=t.tiros.vel||'';
+      document.getElementById('e-tdur').value=t.tiros.duracao||'';
+      document.getElementById('e-tdesc').value=t.tiros.descanso||'';
+      renderTirosInputEdit();
+      if(t.tiros.fcPicos)t.tiros.fcPicos.forEach((v,i)=>{const el=document.getElementById('e-fc-tiro-'+(i+1));if(el)el.value=v;});
+    }
+  }else{ts.style.display='none';}
+  document.getElementById('modal-edit').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeEditModal(){
+  document.getElementById('modal-edit').classList.remove('open');
+  document.body.style.overflow='';editingId=null;
+}
+function toggleTirosFormEdit(){document.getElementById('e-tiros-section').style.display=document.getElementById('e-tipo').value==='intervalada'?'block':'none';}
+function renderTirosInputEdit(){
+  const n=parseInt(document.getElementById('e-ntiros').value)||0;
+  const cont=document.getElementById('e-tiros-fc-inputs');cont.innerHTML='';
+  for(let i=1;i<=n;i++){const d=document.createElement('div');d.className='tiro-field';d.innerHTML=`<label>tiro ${i}</label><input type="number" id="e-fc-tiro-${i}" placeholder="175" inputmode="numeric">`;cont.appendChild(d);}
+}
+function salvarEdicao(){
+  if(!editingId)return;
+  const idx=treinos.findIndex(x=>x.id===editingId);if(idx<0)return;
+  const data=document.getElementById('e-data').value,tipo=document.getElementById('e-tipo').value,dist=parseFloat(document.getElementById('e-dist').value);
+  if(!data||!tipo||isNaN(dist)){showMsg('msg-edit','preencha ao menos data, tipo e distância.',true);return;}
+  let tiros=treinos[idx].tiros;
+  if(tipo==='intervalada'){
+    const n=parseInt(document.getElementById('e-ntiros').value)||0,dur=parseInt(document.getElementById('e-tdur').value)||null,vel=parseFloat(document.getElementById('e-tvel').value)||null,desc=parseInt(document.getElementById('e-tdesc').value)||null,fcPicos=[];
+    for(let i=1;i<=n;i++){const v=parseInt(document.getElementById('e-fc-tiro-'+i)?.value);if(v)fcPicos.push(v);}
+    tiros=n>0?{n,duracao:dur,vel,descanso:desc,fcPicos}:null;
+  }else{tiros=null;}
+  treinos[idx]={...treinos[idx],data,tipo,dist,tempo:parseFloat(document.getElementById('e-tempo').value)||null,fcMed:parseInt(document.getElementById('e-fcm').value)||null,fcMax:parseInt(document.getElementById('e-fcx').value)||null,vel:parseFloat(document.getElementById('e-vel').value)||null,sens:parseInt(document.getElementById('e-sens').value)||null,obs:document.getElementById('e-obs').value||'',tiros};
+  treinos.sort((a,b)=>a.data.localeCompare(b.data));
+  save();renderAll();closeEditModal();
+}
+
+// ── COUNTDOWN / PROVA ──────────────────────────────────────────────────────────
+const PK_PROVA='leonardo_prova_v1';
+let prova={nome:'',data:''};
+function loadProva(){try{const r=localStorage.getItem(PK_PROVA);if(r)prova=JSON.parse(r);}catch(e){prova={nome:'',data:''};}}
+function saveProva(){try{localStorage.setItem(PK_PROVA,JSON.stringify(prova));}catch(e){}}
+function renderCountdown(){
+  const wrap=document.getElementById('countdown-wrap');if(!wrap)return;
+  if(!prova||!prova.data){wrap.innerHTML=`<div class="countdown-none" onclick="abrirProvaModal()">+ definir prova e data alvo</div>`;return;}
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  const alvo=new Date(prova.data+'T00:00:00');alvo.setHours(0,0,0,0);
+  const diff=Math.round((alvo-hoje)/(1000*60*60*24));
+  wrap.innerHTML=`<div class="countdown-banner" onclick="abrirProvaModal()">
+    <div><div class="countdown-days">${diff>0?diff:(diff===0?'🏁':'✓')}</div><div class="countdown-label">${diff>0?'dias para a prova':(diff===0?'dia da prova!':'prova concluída')}</div></div>
+    <div style="text-align:right;"><div class="countdown-name">${prova.nome||'minha prova'}</div><div class="countdown-date">${fmtData(prova.data)}</div><div class="countdown-edit-hint">editar</div></div>
+  </div>`;
+}
+function abrirProvaModal(){
+  document.getElementById('prova-nome').value=prova.nome||'';
+  document.getElementById('prova-data').value=prova.data||'';
+  document.getElementById('modal-prova').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeProvaModal(){
+  document.getElementById('modal-prova').classList.remove('open');
+  document.body.style.overflow='';
+}
+function salvarProva(){
+  prova.nome=document.getElementById('prova-nome').value.trim();
+  prova.data=document.getElementById('prova-data').value;
+  saveProva();renderCountdown();closeProvaModal();
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
 window.onload=()=>{
   document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
   document.getElementById('p-data').value=new Date().toISOString().slice(0,10);
-  loadAll();renderCharts();
+  loadAll();loadProva();renderCountdown();renderCharts();
   setupSlider();initSlider();
-  setupChartSlider('vol', getVolDates, rebuildVolChart);
-  setupChartSlider('pace', getPaceDates, rebuildPaceChart);
-  setupChartSlider('peso', getPesoDates, rebuildPesoChart);
-  initChartSlider('vol', getVolDates);
-  initChartSlider('pace', getPaceDates);
-  initChartSlider('peso', getPesoDates);
-};
+  setupChartSlider('vol',getVolDates,rebuildVolChart);
+  setupChartSlider('pace',getPaceDates,rebuildPaceChart);
+  setupChartSlider('peso',getPesoDates,rebuildPesoChart);
+  initChartSlider('vol',getVolDates);
+  initChartSlider('pace',getPaceDates);
+  initChartSlider('peso',getPesoDates);
+}
 </script>
 <script>
 if('serviceWorker' in navigator){
