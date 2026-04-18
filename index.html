@@ -521,7 +521,7 @@ function rebuildVolChart(){
   const sems={};
   s.forEach(t=>{const k=getMondayISO(t.data);if(k)sems[k]=(sems[k]||0)+(parseFloat(t.dist)||0);});
   const sk=Object.keys(sems).sort();
-  const labels=sk.map(iso=>{const p=iso.split('-');return p[2]+'/'+String(parseInt(p[1]));});
+  const labels=sk.map(iso=>{const p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0].slice(2);});
   const vals=sk.map(k=>parseFloat(sems[k].toFixed(1)));
   if(cVol)cVol.destroy();
   cVol=new Chart(document.getElementById('cVol'),{type:'bar',
