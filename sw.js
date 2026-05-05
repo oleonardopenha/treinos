@@ -1,4 +1,4 @@
-const CACHE = 'treinos-leo-v2';
+const CACHE = 'treinos-leo-v3';
 const ASSETS = [
   './index.html',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js',
