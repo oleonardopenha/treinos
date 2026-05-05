@@ -165,9 +165,9 @@ body{overflow-x:hidden;}
     <div class="modal-handle"></div>
     <div class="modal-title">editar treino</div>
     <div class="grid-2"><div class="field"><label>data</label><input type="date" id="e-data"></div><div class="field"><label>tipo</label><select id="e-tipo" onchange="toggleTirosFormEdit()"><option value="regenerativo">regenerativo</option><option value="intervalada">intervalada</option><option value="longo">longo</option></select></div></div>
-    <div class="grid-2"><div class="field"><label>distância (km)</label><input type="number" id="e-dist" step="0.1" inputmode="decimal"></div><div class="field"><label>tempo (min)</label><input type="number" id="e-tempo" step="0.1" inputmode="decimal"></div></div>
+    <div class="grid-2"><div class="field"><label>distância (km)</label><input type="number" id="e-dist" step="0.1" inputmode="decimal"></div><div class="field"><label>tempo</label><div style="display:flex;gap:6px;align-items:center;"><input type="number" id="e-tempo-h" placeholder="0" min="0" max="9" inputmode="numeric" style="width:50%;"><span style="font-size:13px;color:var(--txt3);padding-top:11px;">h</span><input type="number" id="e-tempo-m" placeholder="51" min="0" max="59" inputmode="numeric" style="width:50%;"><span style="font-size:13px;color:var(--txt3);padding-top:11px;">min</span></div></div></div>
     <div class="grid-2"><div class="field"><label>FC média (bpm)</label><input type="number" id="e-fcm" inputmode="numeric"></div><div class="field"><label>FC máxima (bpm)</label><input type="number" id="e-fcx" inputmode="numeric"></div></div>
-    <div class="grid-2"><div class="field"><label>vel (km/h)</label><input type="number" id="e-vel" step="0.1" inputmode="decimal"></div><div class="field"><label>sensação</label><input type="number" id="e-sens" min="1" max="10" inputmode="numeric"></div></div>
+    <div class="field"><label>sensação</label><input type="number" id="e-sens" min="1" max="10" inputmode="numeric"></div>
     <div class="field"><label>observações</label><input type="text" id="e-obs"></div>
     <div class="tiros-section" id="e-tiros-section">
       <div class="section-lbl" style="margin-top:4px;">detalhes dos tiros</div>
@@ -300,9 +300,9 @@ body{overflow-x:hidden;}
   <div class="page-title">registrar treino</div>
   <div class="form-box">
     <div class="grid-2"><div class="field"><label>data</label><input type="date" id="f-data"></div><div class="field"><label>tipo</label><select id="f-tipo" onchange="toggleTirosForm()"><option value="regenerativo">regenerativo</option><option value="intervalada">intervalada</option><option value="longo">longo</option></select></div></div>
-    <div class="grid-2"><div class="field"><label>distância (km)</label><input type="number" id="f-dist" placeholder="8.0" step="0.1" inputmode="decimal"></div><div class="field"><label>tempo (min)</label><input type="number" id="f-tempo" placeholder="51.8" step="0.1" inputmode="decimal"></div></div>
+    <div class="grid-2"><div class="field"><label>distância (km)</label><input type="number" id="f-dist" placeholder="8.0" step="0.1" inputmode="decimal"></div><div class="field"><label>tempo</label><div style="display:flex;gap:6px;align-items:center;"><input type="number" id="f-tempo-h" placeholder="0" min="0" max="9" inputmode="numeric" style="width:50%;"><span style="font-size:13px;color:var(--txt3);padding-top:11px;">h</span><input type="number" id="f-tempo-m" placeholder="51" min="0" max="59" inputmode="numeric" style="width:50%;"><span style="font-size:13px;color:var(--txt3);padding-top:11px;">min</span></div></div></div>
     <div class="grid-2"><div class="field"><label>FC média (bpm)</label><input type="number" id="f-fcm" placeholder="155" inputmode="numeric"></div><div class="field"><label>FC máxima (bpm)</label><input type="number" id="f-fcx" placeholder="175" inputmode="numeric"></div></div>
-    <div class="grid-2"><div class="field"><label>vel (km/h)</label><input type="number" id="f-vel" placeholder="9.5" step="0.1" inputmode="decimal"></div><div class="field"><label>sensação</label><input type="number" id="f-sens" placeholder="8" min="1" max="10" inputmode="numeric"></div></div>
+    <div class="field"><label>sensação</label><input type="number" id="f-sens" placeholder="8" min="1" max="10" inputmode="numeric"></div>
     <div class="field"><label>observações</label><input type="text" id="f-obs" placeholder="ex: calor forte, lombar ok..."></div>
 
     <div class="tiros-section" id="tiros-section">
@@ -510,7 +510,7 @@ function rebuildFCChart(){
       plugins:{legend:{display:false}},
       scales:{
         yFC:{position:'left',min:100,grid:{color:'rgba(128,128,128,.1)'},ticks:{font:{size:10},callback:v=>v+'bpm'}},
-        yDist:{position:'right',min:0,max:15,grid:{display:false},ticks:{font:{size:10},callback:v=>v+'km'},display:legState.dist},
+        yDist:{position:'right',min:0,suggestedMax:Math.ceil((Math.max(...distData.filter(v=>v!=null),...[1]))*1.15),grid:{display:false},ticks:{font:{size:10},callback:v=>v+'km'},display:legState.dist},
         x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}}}}
   });
 }
@@ -675,17 +675,20 @@ function salvarTreino(){
   const data=document.getElementById('f-data').value,tipo=document.getElementById('f-tipo').value,dist=parseFloat(document.getElementById('f-dist').value);
   if(!data||!tipo||isNaN(dist)){showMsg('msg-add','preencha ao menos data, tipo e distância.',true);return;}
   if(treinos.some(t=>t.data===data&&t.tipo===tipo)){showMsg('msg-add','já existe treino nesta data e tipo.',true);return;}
+  const fh=parseInt(document.getElementById('f-tempo-h').value)||0,fm=parseInt(document.getElementById('f-tempo-m').value)||0;
+  const tempo=(fh||fm)?(fh*60+fm):null;
+  const vel=(dist&&tempo)?parseFloat((dist/(tempo/60)).toFixed(2)):null;
   let tiros=null;
   if(tipo==='intervalada'){
-    const n=parseInt(document.getElementById('f-ntiros').value)||0,dur=parseInt(document.getElementById('f-tdur').value)||null,vel=parseFloat(document.getElementById('f-tvel').value)||null,desc=parseInt(document.getElementById('f-tdesc').value)||null,fcPicos=[];
+    const n=parseInt(document.getElementById('f-ntiros').value)||0,dur=parseInt(document.getElementById('f-tdur').value)||null,tvl=parseFloat(document.getElementById('f-tvel').value)||null,desc=parseInt(document.getElementById('f-tdesc').value)||null,fcPicos=[];
     for(let i=1;i<=n;i++){const v=parseInt(document.getElementById('fc-tiro-'+i)&&document.getElementById('fc-tiro-'+i).value);if(v)fcPicos.push(v);}
-    if(n>0)tiros={n,duracao:dur,vel,descanso:desc,fcPicos};
+    if(n>0)tiros={n,duracao:dur,vel:tvl,descanso:desc,fcPicos};
   }
-  treinos.push({data,tipo,dist,tempo:parseFloat(document.getElementById('f-tempo').value)||null,fcMed:parseInt(document.getElementById('f-fcm').value)||null,fcMax:parseInt(document.getElementById('f-fcx').value)||null,vel:parseFloat(document.getElementById('f-vel').value)||null,sens:parseInt(document.getElementById('f-sens').value)||null,obs:document.getElementById('f-obs').value||'',tiros,id:Date.now()});
+  treinos.push({data,tipo,dist,tempo,fcMed:parseInt(document.getElementById('f-fcm').value)||null,fcMax:parseInt(document.getElementById('f-fcx').value)||null,vel,sens:parseInt(document.getElementById('f-sens').value)||null,obs:document.getElementById('f-obs').value||'',tiros,id:Date.now()});
   treinos.sort((a,b)=>a.data.localeCompare(b.data));save();showMsg('msg-add','✓ treino salvo!');limparForm();renderSummary();
 }
 function limparForm(){
-  ['f-dist','f-tempo','f-fcm','f-fcx','f-vel','f-sens','f-obs','f-ntiros','f-tdur','f-tvel','f-tdesc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-dist','f-tempo-h','f-tempo-m','f-fcm','f-fcx','f-sens','f-obs','f-ntiros','f-tdur','f-tvel','f-tdesc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   document.getElementById('f-tipo').value='regenerativo';document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
   document.getElementById('tiros-section').style.display='none';document.getElementById('tiros-fc-inputs').innerHTML='';
 }
@@ -787,9 +790,11 @@ let editingId=null;
 function abrirEditModal(id){
   const t=treinos.find(x=>x.id===id);if(!t)return;editingId=id;
   document.getElementById('e-data').value=t.data;document.getElementById('e-tipo').value=t.tipo;
-  document.getElementById('e-dist').value=t.dist||'';document.getElementById('e-tempo').value=t.tempo||'';
+  document.getElementById('e-dist').value=t.dist||'';
+  const th=t.tempo?Math.floor(t.tempo/60):0,tm=t.tempo?Math.round(t.tempo%60):0;
+  document.getElementById('e-tempo-h').value=th||'';document.getElementById('e-tempo-m').value=tm||'';
   document.getElementById('e-fcm').value=t.fcMed||'';document.getElementById('e-fcx').value=t.fcMax||'';
-  document.getElementById('e-vel').value=t.vel||'';document.getElementById('e-sens').value=t.sens||'';
+  document.getElementById('e-sens').value=t.sens||'';
   document.getElementById('e-obs').value=t.obs||'';
   const ts=document.getElementById('e-tiros-section');
   if(t.tipo==='intervalada'){ts.style.display='block';if(t.tiros){document.getElementById('e-ntiros').value=t.tiros.n||'';document.getElementById('e-tvel').value=t.tiros.vel||'';document.getElementById('e-tdur').value=t.tiros.duracao||'';document.getElementById('e-tdesc').value=t.tiros.descanso||'';renderTirosInputEdit();if(t.tiros.fcPicos)t.tiros.fcPicos.forEach((v,i)=>{const el=document.getElementById('e-fc-tiro-'+(i+1));if(el)el.value=v;});}}else{ts.style.display='none';}
@@ -806,8 +811,11 @@ function salvarEdicao(){
   const data=document.getElementById('e-data').value,tipo=document.getElementById('e-tipo').value,dist=parseFloat(document.getElementById('e-dist').value);
   if(!data||!tipo||isNaN(dist)){showMsg('msg-edit','preencha ao menos data, tipo e distância.',true);return;}
   let tiros=treinos[idx].tiros;
-  if(tipo==='intervalada'){const n=parseInt(document.getElementById('e-ntiros').value)||0,dur=parseInt(document.getElementById('e-tdur').value)||null,vel=parseFloat(document.getElementById('e-tvel').value)||null,desc=parseInt(document.getElementById('e-tdesc').value)||null,fcPicos=[];for(let i=1;i<=n;i++){const el=document.getElementById('e-fc-tiro-'+i);const v=el?parseInt(el.value):0;if(v)fcPicos.push(v);}tiros=n>0?{n,duracao:dur,vel,descanso:desc,fcPicos}:null;}else{tiros=null;}
-  treinos[idx]={...treinos[idx],data,tipo,dist,tempo:parseFloat(document.getElementById('e-tempo').value)||null,fcMed:parseInt(document.getElementById('e-fcm').value)||null,fcMax:parseInt(document.getElementById('e-fcx').value)||null,vel:parseFloat(document.getElementById('e-vel').value)||null,sens:parseInt(document.getElementById('e-sens').value)||null,obs:document.getElementById('e-obs').value||'',tiros};
+  const eh=parseInt(document.getElementById('e-tempo-h').value)||0,em=parseInt(document.getElementById('e-tempo-m').value)||0;
+  const tempo=(eh||em)?(eh*60+em):null;
+  const vel=(dist&&tempo)?parseFloat((dist/(tempo/60)).toFixed(2)):null;
+  if(tipo==='intervalada'){const n=parseInt(document.getElementById('e-ntiros').value)||0,dur=parseInt(document.getElementById('e-tdur').value)||null,tvl=parseFloat(document.getElementById('e-tvel').value)||null,desc=parseInt(document.getElementById('e-tdesc').value)||null,fcPicos=[];for(let i=1;i<=n;i++){const el=document.getElementById('e-fc-tiro-'+i);const v=el?parseInt(el.value):0;if(v)fcPicos.push(v);}tiros=n>0?{n,duracao:dur,vel:tvl,descanso:desc,fcPicos}:null;}else{tiros=null;}
+  treinos[idx]={...treinos[idx],data,tipo,dist,tempo,fcMed:parseInt(document.getElementById('e-fcm').value)||null,fcMax:parseInt(document.getElementById('e-fcx').value)||null,vel,sens:parseInt(document.getElementById('e-sens').value)||null,obs:document.getElementById('e-obs').value||'',tiros};
   treinos.sort((a,b)=>a.data.localeCompare(b.data));save();renderAll();closeEditModal();
 }
 
